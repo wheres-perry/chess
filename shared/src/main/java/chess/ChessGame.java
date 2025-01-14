@@ -2,6 +2,7 @@ package chess;
 
 import java.util.Collection;
 
+
 /**
  * For a class that can manage a chess game, making moves on a board
  * <p>
@@ -11,7 +12,7 @@ import java.util.Collection;
 public class ChessGame {
 
     public ChessGame() {
-
+        // ChessBoard Board = ChessBoard();
     }
 
     /**
