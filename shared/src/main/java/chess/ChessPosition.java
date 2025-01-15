@@ -8,12 +8,12 @@ package chess;
  */
 public class ChessPosition {
 
-    private final int rank;
-    private final int file;
+    private final int row;
+    private final int col;
 
     public ChessPosition(int row, int col) {
-        this.rank = row;
-        this.file = col;
+        this.row = row;
+        this.col = col;
     }
 
     /**
@@ -21,7 +21,7 @@ public class ChessPosition {
      *         1 codes for the bottom row
      */
     public int getRow() { // Should be called rank
-        return rank;
+        return row;
     }
 
     /**
@@ -55,5 +55,10 @@ public class ChessPosition {
         if (col != other.col)
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + row + ", " + col + ")";
     }
 }

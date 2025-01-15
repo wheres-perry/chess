@@ -8,22 +8,30 @@ package chess;
  */
 public class ChessMove {
 
+    private final ChessPosition start; 
+    private final ChessPosition end;
+    private final ChessPiece.PieceType promoPiece;
+
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
                      ChessPiece.PieceType promotionPiece) {
+        this.start = startPosition;
+        this.end = endPosition;
+        this.promoPiece = promotionPiece;
+
     }
 
     /**
      * @return ChessPosition of starting location
      */
     public ChessPosition getStartPosition() {
-        throw new RuntimeException("Not implemented");
+        return start;
     }
 
     /**
      * @return ChessPosition of ending location
      */
     public ChessPosition getEndPosition() {
-        throw new RuntimeException("Not implemented");
+        return end;
     }
 
     /**
@@ -33,7 +41,7 @@ public class ChessMove {
      * @return Type of piece to promote a pawn to, or null if no promotion
      */
     public ChessPiece.PieceType getPromotionPiece() {
-        return piece;
+        return promoPiece;
     }
 
     @Override
@@ -42,7 +50,7 @@ public class ChessMove {
         int result = 1;
         result = prime * result + ((start == null) ? 0 : start.hashCode());
         result = prime * result + ((end == null) ? 0 : end.hashCode());
-        result = prime * result + ((piece == null) ? 0 : piece.hashCode());
+        result = prime * result + ((promoPiece == null) ? 0 : promoPiece.hashCode());
         return result;
     }
 
@@ -65,8 +73,14 @@ public class ChessMove {
                 return false;
         } else if (!end.equals(other.end))
             return false;
-        if (piece != other.piece)
+        if (promoPiece != other.promoPiece)
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        //return ("[" + start + "=>" + end + ", promo=" + promoPiece + "]");
+        return ("[" + start + "=>" + end + "]"); //promo is bloating the errors I can't see
     }
 }

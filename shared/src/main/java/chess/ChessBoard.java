@@ -7,7 +7,7 @@ import java.util.Arrays;
  * <p>
  * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
-    private ChessPiece[][] boardMatrix = new ChessPiece[8][8];
+ */
 public class ChessBoard {
     private ChessPiece[][] boardMatrix = new ChessPiece[8][8];
 
@@ -39,70 +39,72 @@ public class ChessBoard {
     /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
+     */
+    public void resetBoard() {
         ChessPosition pos;
         ChessPiece piece;
  
         pos = new ChessPosition(1, 1);
-        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
         addPiece(pos, piece);
         pos = new ChessPosition(1, 8);
         addPiece(pos, piece);
 
         pos = new ChessPosition(8, 1);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
         addPiece(pos, piece);
         pos = new ChessPosition(8, 8);
         addPiece(pos, piece);
 
         pos = new ChessPosition(1, 2);
+        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+        addPiece(pos, piece);
+        pos = new ChessPosition(1, 7);
+        addPiece(pos, piece);
+
+        pos = new ChessPosition(8, 2);
         piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+        addPiece(pos, piece);
+        pos = new ChessPosition(8, 7);
+        addPiece(pos, piece);
+
+        pos = new ChessPosition(1, 3);
+        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
         addPiece(pos, piece);
         pos = new ChessPosition(1, 6);
         addPiece(pos, piece);
 
-        pos = new ChessPosition(8, 2);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
-        addPiece(pos, piece);
-        pos = new ChessPosition(8, 6);
-        addPiece(pos, piece);
-
-        pos = new ChessPosition(1, 3);
+        pos = new ChessPosition(8, 3);
         piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
         addPiece(pos, piece);
-        pos = new ChessPosition(1, 5);
-        addPiece(pos, piece);
-
-        pos = new ChessPosition(8, 3);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
-        addPiece(pos, piece);
-        pos = new ChessPosition(8, 5);
+        pos = new ChessPosition(8, 6);
         addPiece(pos, piece);
 
 
 
         pos = new ChessPosition(1, 4);
-        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
+        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
         addPiece(pos, piece);
         pos = new ChessPosition(8, 4);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
+        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
         addPiece(pos, piece);
 
         pos = new ChessPosition(1, 5);
-        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
+        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
         addPiece(pos, piece);
         pos = new ChessPosition(8, 5);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
+        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
         addPiece(pos, piece);
 
 
         for (int i = 1; i <= 8; i++){
             pos = new ChessPosition(2, i);
-            piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+            piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
             addPiece(pos, piece);
         }
         for (int i = 1; i <= 8; i++){
             pos = new ChessPosition(7, i);
-            piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
+            piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
             addPiece(pos, piece);
         }
 
@@ -145,57 +147,23 @@ public class ChessBoard {
             }
         }
         return true;
-    public void resetBoard() {
-        ChessPosition pos;
-        ChessPiece piece;
- 
-        pos = new ChessPosition(1, 1);
-        piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
-        addPiece(pos, piece);
-        pos = new ChessPosition(2, 8);
-        addPiece(pos, piece);
-
-        pos = new ChessPosition(6, 1);
-        piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
-        addPiece(pos, piece);
-        pos = new ChessPosition(6, 8);
-        addPiece(pos, piece);
-
-
-
-
-        for (int i = 1; i <= 8; i++){
-            pos = new ChessPosition(2, i);
-            piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
-            addPiece(pos, piece);
-        }
-        for (int i = 1; i <= 8; i++){
-            ChessPosition pos = new ChessPosition(6, i);
-            ChessPiece piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
-            addPiece(pos, piece);
-        }
-
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.deepHashCode(boardMatrix);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ChessBoard other = (ChessBoard) obj;
-        if (!Arrays.deepEquals(boardMatrix, other.boardMatrix))
-            return false;
-        return true;
+    public String toString() {
+        StringBuilder sb = new StringBuilder(); //String builder makes it easy for me to add new lines so i can have legible debug info
+    
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                ChessPiece piece = boardMatrix[c][r];
+                if (piece == null) {
+                    sb.append("_ ");
+                } else {
+                    sb.append(piece.toString()).append(" ");
+                }
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 }
