@@ -2,7 +2,6 @@ package chess;
 
 import java.util.Collection;
 
-
 /**
  * For a class that can manage a chess game, making moves on a board
  * <p>
@@ -35,8 +34,14 @@ public class ChessGame {
      * Enum identifying the 2 possible teams in a chess game
      */
     public enum TeamColor {
-        WHITE,
-        BLACK
+        WHITE, BLACK;
+
+        public TeamColor not() {
+            if (this == WHITE) {
+                return BLACK;
+            }
+            return WHITE;
+        }
     }
 
     /**
@@ -44,7 +49,7 @@ public class ChessGame {
      *
      * @param startPosition the piece to get valid moves for
      * @return Set of valid moves for requested piece, or null if no piece at
-     * startPosition
+     *         startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         throw new RuntimeException("Not implemented");

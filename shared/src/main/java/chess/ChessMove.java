@@ -8,17 +8,28 @@ package chess;
  */
 public class ChessMove {
 
-    private final ChessPosition start; 
+    private final ChessPosition start;
     private final ChessPosition end;
     private final ChessPiece.PieceType promoPiece;
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
-                     ChessPiece.PieceType promotionPiece) {
+            ChessPiece.PieceType promotionPiece) {
         this.start = startPosition;
         this.end = endPosition;
         this.promoPiece = promotionPiece;
 
     }
+
+    public enum Direction {
+        N,
+        E,
+        S,
+        W,
+        NE,
+        NW,
+        SE,
+        SW
+    };
 
     /**
      * @return ChessPosition of starting location
@@ -80,7 +91,7 @@ public class ChessMove {
 
     @Override
     public String toString() {
-        //return ("[" + start + "=>" + end + ", promo=" + promoPiece + "]");
-        return ("[" + start + "=>" + end + "]"); //promo is bloating the errors I can't see
+        // return ("[" + start + "=>" + end + ", promo=" + promoPiece + "]");
+        return ("[" + start + "=>" + end + "]"); // promo is bloating the errors I can't see
     }
 }
