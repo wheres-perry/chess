@@ -19,10 +19,10 @@ public class ChessPiece {
         PAWN
     };
 
-    private final ChessGame.TeamColor color;
-    private final ChessPiece.PieceType type;
-    private boolean HasMoved;
-    private boolean EPable;
+    protected final ChessGame.TeamColor color;
+    protected final ChessPiece.PieceType type;
+    protected boolean HasMoved;
+    protected boolean EPable;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
             boolean EPable) { // Overloaded constructor
@@ -60,10 +60,38 @@ public class ChessPiece {
      *
      * @return Collection of valid moves
      */
-
-
-
-
+    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
+        Collection<ChessMove> output = new ArrayList<>();
+        switch (type) {
+            case KING:
+                King king = new King(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(king.moves());
+                break;
+            case QUEEN:
+                Queen queen = new Queen(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(queen.moves());
+                break;
+            case BISHOP:
+                Bishop bishop = new Bishop(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(bishop.moves());
+                break;
+            case KNIGHT:
+                Knight knight = new Knight(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(knight.moves());
+                break;
+            case ROOK:
+                Rook rook = new Rook(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(rook.moves());
+                break;
+            case PAWN:
+                Pawn pawn = new Pawn(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                output.addAll(pawn.moves());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected piece type: " + type);
+        }
+        return output;
+    }
 
     @Override
     public int hashCode() {
@@ -106,16 +134,14 @@ public class ChessPiece {
                     return "♚";
                 case QUEEN:
 
-                return "♛";
+                    return "♛";
                 default:
                     throw new RuntimeException("Piece does not have a valid type");
             }
         } else {
-
             switch (type) {
                 case PAWN:
-
-                return "♙";
+                    return "♙";
                 case ROOK:
                     return "♖";
                 case KNIGHT:

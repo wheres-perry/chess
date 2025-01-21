@@ -20,6 +20,13 @@ public class ChessMove {
 
     }
 
+    public ChessMove(ChessPosition startPosition, ChessPosition endPosition) {
+        this.start = startPosition;
+        this.end = endPosition;
+        this.promoPiece = null;
+
+    }
+
     public enum Direction {
         N,
         E,

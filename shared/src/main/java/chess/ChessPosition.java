@@ -32,6 +32,17 @@ public class ChessPosition {
         return col;
     }
 
+    public Boolean InBounds(){
+        if (col < 1 | col >8){
+            return false;
+        }
+        if (row < 1 | row > 8){
+            return false;
+        }
+        return true;
+    }
+
+
     @Override
     public int hashCode() {
         final int prime = 31;
