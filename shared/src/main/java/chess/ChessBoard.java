@@ -151,16 +151,23 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        boolean isWhite = true;
 
-        for (int r = 0; r < 8; r++) {
+        for (int r = 7; r >= 0; r--) {
             for (int c = 0; c < 8; c++) {
                 ChessPiece piece = boardMatrix[c][r];
                 if (piece == null) {
-                    sb.append("_ ");
+                    if (isWhite) {
+                        sb.append("⬜");
+                    } else {
+                        sb.append("⬛");
+                    }
                 } else {
                     sb.append(piece.toString()).append(" ");
                 }
+                isWhite = !(isWhite);
             }
+            sb.append("\b");
             sb.append("\n");
         }
         return sb.toString();

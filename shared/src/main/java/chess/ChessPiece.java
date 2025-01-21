@@ -21,10 +21,22 @@ public class ChessPiece {
 
     private final ChessGame.TeamColor color;
     private final ChessPiece.PieceType type;
+    private boolean HasMoved;
+    private boolean EPable;
 
-    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
+    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
+            boolean EPable) { // Overloaded constructor
         this.color = pieceColor;
         this.type = type;
+        this.HasMoved = HasMoved;
+        this.EPable = EPable;
+    }
+
+    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) { // Overloaded constructor
+        this.color = pieceColor;
+        this.type = type;
+        this.HasMoved = false;
+        this.EPable = false;
     }
 
     /**
@@ -50,174 +62,6 @@ public class ChessPiece {
      */
 
 
-    public boolean isOccupied(ChessBoard board, ChessPosition myPosition){ //Dummy function for now
-        return false;
-    }
-
-    public ChessMove up(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow() + distance, myPosition.getColumn());
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove down(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow() - distance, myPosition.getColumn());
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove left(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow(), myPosition.getColumn() - distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove right(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow(), myPosition.getColumn() + distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-    
-    public ChessMove UL(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow()-distance, myPosition.getColumn() - distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove UR(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow() - distance, myPosition.getColumn() + distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove DL(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow() + distance, myPosition.getColumn() - distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public ChessMove DR(ChessBoard board, ChessPosition myPosition, int distance){
-        ChessPosition targetSquare = new ChessPosition(myPosition.getRow() + distance, myPosition.getColumn() + distance);
-        if (isOccupied(board, targetSquare)){
-            return null;
-        }
-        else{
-            ChessMove move = new ChessMove(myPosition, targetSquare, null);
-            return move;
-        }
-        
-    }
-
-    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        Collection<ChessMove> moves = new ArrayList<>();
-        ChessMove result;
-        switch (type){
-            case KING: // 1 Square in other directions
-                result = up(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = down(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = left(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = right(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = UL(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = UR(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = DL(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                result = DR(board, myPosition, 1);
-                if (result != null){moves.add(result);}
-                break;
-            case QUEEN:
-                throw new RuntimeException("Not implemented yet");
-                //break;
-            case BISHOP:
-                int increment = 1;
-                while((myPosition.getColumn() - increment >= 1) && (myPosition.getRow() - increment >= 1)){
-                    result = UL(board, myPosition, increment);
-                    if (result != null){moves.add(result);}
-                    increment++;
-                }
-                increment = 1;
-
-                while((myPosition.getColumn() + increment <= 8) && (myPosition.getRow() - increment >= 1)){ //Ensures only inbound moves
-                    result = UR(board, myPosition, increment);
-                    if (result != null){moves.add(result);}
-                    increment++;
-                }
-                increment = 1;
-
-                while((myPosition.getColumn() - increment >= 1) && (myPosition.getRow() + increment <= 8)){ //Ensures only inbound moves
-                    result = DL(board, myPosition, increment);
-                    if (result != null){moves.add(result);}
-                    increment++;
-                }
-                increment = 1;
-
-                while((myPosition.getColumn() + increment <= 8) && (myPosition.getRow() + increment <= 8)){ //Ensures only inbound moves
-                    result = DR(board, myPosition, increment);
-                    if (result != null){moves.add(result);}
-                    increment++;
-                }
-                break;
-            case KNIGHT:
-                throw new RuntimeException("Not implemented yet");
-                //break;
-            case ROOK:
-                throw new RuntimeException("Not implemented yet");
-                //break;
-            case PAWN:
-                throw new RuntimeException("Not implemented yet");
-                //break;
-            default:
-                throw new RuntimeException("Piece does not have a valid type");
-        }
-        return moves;
-    }
 
 
 
@@ -248,38 +92,40 @@ public class ChessPiece {
 
     @Override
     public String toString() {
-        if (color == ChessGame.TeamColor.BLACK){
-            switch (type){
+        if (color == ChessGame.TeamColor.BLACK) {
+            switch (type) {
                 case PAWN:
-                    return "p";
+                    return "♟";
                 case ROOK:
-                    return "r";
+                    return "♜";
                 case KNIGHT:
-                    return "n";
+                    return "♞";
                 case BISHOP:
-                    return "b";
+                    return "♝";
                 case KING:
-                    return "k";
+                    return "♚";
                 case QUEEN:
-                    return "q";
+
+                return "♛";
                 default:
                     throw new RuntimeException("Piece does not have a valid type");
             }
-        } 
-        else{
-            switch (type){
+        } else {
+
+            switch (type) {
                 case PAWN:
-                    return "P";
+
+                return "♙";
                 case ROOK:
-                    return "R";
+                    return "♖";
                 case KNIGHT:
-                    return "N";
+                    return "♘";
                 case BISHOP:
-                    return "B";
+                    return "♗";
                 case KING:
-                    return "K";
+                    return "♔";
                 case QUEEN:
-                    return "Q";
+                    return "♕";
                 default:
                     throw new RuntimeException("Piece does not have a valid type");
             }
