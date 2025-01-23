@@ -39,6 +39,8 @@ public class ChessPiece {
         this.EPable = false;
     }
 
+    
+
     /**
      * @return Which team this chess piece belongs to
      */
@@ -62,35 +64,36 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
         Collection<ChessMove> output = new ArrayList<>();
+    
         switch (type) {
             case KING:
-                King king = new King(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                King king = new King(board, position, color);
                 output.addAll(king.moves());
                 break;
             case QUEEN:
-                Queen queen = new Queen(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                Queen queen = new Queen(board, position, color);
                 output.addAll(queen.moves());
                 break;
             case BISHOP:
-                Bishop bishop = new Bishop(this.color, this.type, this.HasMoved, this.EPable, board, position);
-                Collection<ChessMove> x = bishop.moves();
+                Bishop bishop = new Bishop(board, position, color);
                 output.addAll(bishop.moves());
                 break;
             case KNIGHT:
-                Knight knight = new Knight(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                Knight knight = new Knight(board, position, color);
                 output.addAll(knight.moves());
                 break;
             case ROOK:
-                Rook rook = new Rook(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                Rook rook = new Rook(board, position, color);
                 output.addAll(rook.moves());
                 break;
             case PAWN:
-                Pawn pawn = new Pawn(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                Pawn pawn = new Pawn(board, position, color);
                 output.addAll(pawn.moves());
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected piece type: " + type);
         }
+    
         return output;
     }
 

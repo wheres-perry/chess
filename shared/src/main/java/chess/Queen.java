@@ -6,14 +6,13 @@ import java.util.List;
 
 public class Queen extends ChessMovesCalculator {
 
-    public Queen(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable, ChessBoard board, ChessPosition position) {
-        super(pieceColor, type, HasMoved, EPable, board, position);
+    public Queen(ChessBoard board, ChessPosition position, ChessGame.TeamColor color) {
+        super(color, ChessPiece.PieceType.QUEEN, board, position); // Needs this for the ChessMovesCalculatorConstructor
     }
 
     @Override
     final public Collection<ChessMove> moves() {
-        final List<ChessMove.Direction> dirs = List.of(
+        List<ChessMove.Direction> dirs = List.of(
                 ChessMove.Direction.N,
                 ChessMove.Direction.E,
                 ChessMove.Direction.S,
@@ -24,10 +23,8 @@ public class Queen extends ChessMovesCalculator {
                 ChessMove.Direction.SW);
 
         Collection<ChessMove> output = new ArrayList<>();
-
         for (ChessMove.Direction dir : dirs) {
-            Collection<ChessMove> m = LinearMove(dir, board, position, 8);
-            output.addAll(m);
+            output.addAll(LinearMove(dir, board, position, 8));
         }
         return output;
     }

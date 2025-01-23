@@ -6,10 +6,10 @@ import java.util.List;
 
 public class Bishop extends ChessMovesCalculator {
 
-    public Bishop(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable, ChessBoard board, ChessPosition position) {
-        super(pieceColor, type, HasMoved, EPable, board, position);
+    public Bishop(ChessBoard board, ChessPosition position, ChessGame.TeamColor color) {
+        super(color, ChessPiece.PieceType.BISHOP, board, position);
     }
+    
 
     @Override
     final public Collection<ChessMove> moves() {

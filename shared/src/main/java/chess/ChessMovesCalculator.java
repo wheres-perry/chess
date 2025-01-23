@@ -8,9 +8,12 @@ public abstract class ChessMovesCalculator extends ChessPiece {
     protected ChessBoard board;
     protected ChessPosition position;
 
-    public ChessMovesCalculator(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable, ChessBoard board, ChessPosition position) {
-        super(pieceColor, type, HasMoved, EPable);
+    public ChessMovesCalculator(
+            ChessGame.TeamColor color,
+            ChessPiece.PieceType type,
+            ChessBoard board,
+            ChessPosition position) {
+        super(color, type);
         this.board = board;
         this.position = position;
     }
@@ -43,6 +46,10 @@ public abstract class ChessMovesCalculator extends ChessPiece {
 
     final public Collection<ChessMove> LinearMove(ChessMove.Direction dir, ChessBoard board, ChessPosition myPosition,
             int distance) {
+        if (distance < 0){
+            throw new IllegalArgumentException("Distance is a scalar (cannot be negative)");
+        }
+        
         Collection<ChessMove> moves = new ArrayList<>();
         final int row_pos = myPosition.getRow();
         final int col_pos = myPosition.getColumn();
@@ -84,7 +91,7 @@ public abstract class ChessMovesCalculator extends ChessPiece {
                 colOffset = -1;
                 break;
             default:
-                throw new RuntimeException("Invalid direction");
+                throw new IllegalArgumentException("Invalid direction passed to LinearMove");
         }
         for (int i = 1; i <= distance; i++) {
             ChessPosition target = new ChessPosition(row_pos + i * rowOffset,

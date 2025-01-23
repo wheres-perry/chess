@@ -6,9 +6,8 @@ import java.util.List;
 
 public class Rook extends ChessMovesCalculator {
 
-    public Rook(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable, ChessBoard board, ChessPosition position) {
-        super(pieceColor, type, HasMoved, EPable, board, position);
+    public Rook(ChessBoard board, ChessPosition position, ChessGame.TeamColor color) {
+        super(color, ChessPiece.PieceType.ROOK, board, position);
     }
 
     @Override

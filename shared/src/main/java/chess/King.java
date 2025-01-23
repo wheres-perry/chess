@@ -6,9 +6,8 @@ import java.util.List;
 
 public class King extends ChessMovesCalculator {
 
-    public King(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable, ChessBoard board, ChessPosition position) {
-        super(pieceColor, type, HasMoved, EPable, board, position);
+    public King(ChessBoard board, ChessPosition position, ChessGame.TeamColor color) {
+        super(color, ChessPiece.PieceType.KING, board, position);
     }
 
     @Override
