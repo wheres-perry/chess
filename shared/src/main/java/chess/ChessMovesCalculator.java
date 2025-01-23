@@ -17,31 +17,28 @@ public abstract class ChessMovesCalculator extends ChessPiece {
 
     public abstract Collection<ChessMove> moves();
 
-    public boolean isFreeOrEnemy(ChessBoard board, ChessPosition targetSquare) { // If it not a team member, its free
-        if (board.getPiece(targetSquare).getTeamColor() != color) {
+    public boolean IsFriend(ChessBoard board, ChessPosition target) {
+        ChessPiece piece = board.getPiece(target);
+        if (piece == null) {
+            return false;
+        }
+        if (board.getPiece(target).getTeamColor() == color) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean IsEnemy(ChessBoard board, ChessPosition target) {
+        ChessPiece piece = board.getPiece(target);
+        if (piece == null) {
+            return false;
+        }
+        if (board.getPiece(target).getTeamColor() == color) {
+            return false;
+        } else {
             return true;
         }
-        return false;
-    }
-
-    public boolean InBounds(int col, int row) {
-        if (col < 1 | col > 8) {
-            return false;
-        }
-        if (row < 1 | row > 8) {
-            return false;
-        }
-        return true;
-    }
-
-    public boolean DestinationChecks(ChessBoard board, ChessPosition targetSquare) {
-        if (isFreeOrEnemy(board, targetSquare)) {
-            return false;
-        }
-        if (!targetSquare.InBounds()) {
-            return false;
-        }
-        return true;
     }
 
     final public Collection<ChessMove> LinearMove(ChessMove.Direction dir, ChessBoard board, ChessPosition myPosition,
@@ -92,10 +89,16 @@ public abstract class ChessMovesCalculator extends ChessPiece {
         for (int i = 1; i <= distance; i++) {
             ChessPosition target = new ChessPosition(row_pos + i * rowOffset,
                     col_pos + i * colOffset);
-            if (!DestinationChecks(board, target)) {
+            if (!target.InBounds()) {
+                break;
+            }
+            if (IsFriend(board, target)) {
                 break;
             }
             moves.add(new ChessMove(myPosition, target));
+            if (IsEnemy(board, target)) {
+                break;
+            }
         }
         return moves;
     }

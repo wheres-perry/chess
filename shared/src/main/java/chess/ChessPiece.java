@@ -73,6 +73,7 @@ public class ChessPiece {
                 break;
             case BISHOP:
                 Bishop bishop = new Bishop(this.color, this.type, this.HasMoved, this.EPable, board, position);
+                Collection<ChessMove> x = bishop.moves();
                 output.addAll(bishop.moves());
                 break;
             case KNIGHT:
