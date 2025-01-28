@@ -1,4 +1,6 @@
 ### Maven
+.idea
+.devcontainer
 target/
 pom.xml.tag
 pom.xml.releaseBackup
