@@ -2,15 +2,17 @@ package chess;
 
 /**
  * A chessboard that can hold and rearrange chess pieces.
- * <p>
- * Note: You can add to this class, but you may not alter
- * signature of the existing methods.
+ * 
  */
 public class ChessBoard {
     private ChessPiece[][] boardMatrix = new ChessPiece[8][8];
 
-    public ChessBoard() {
+    public ChessBoard() { // Default constructor no params
+        resetBoard();
+    }
 
+    public ChessBoard(String layout) { // Laying Groundwork for creating new board states based on a string
+        throw new RuntimeException("Not implemented");
     }
 
     /**
