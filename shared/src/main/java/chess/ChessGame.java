@@ -2,6 +2,8 @@ package chess;
 
 import java.util.Collection;
 
+import chess.ChessPiece.PieceType;
+
 /**
  * For a class that can manage a chess game, making moves on a board
  */
@@ -58,7 +60,18 @@ public class ChessGame {
      *         startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        throw new RuntimeException("Not implemented");
+        ChessPiece piece = Board.getPiece(startPosition);
+        if (piece == null || (isInCheck(TeamTurn) && piece.getPieceType() != PieceType.KING)){
+            return(null);
+        }
+        Collection<ChessMove> possibleMoves =  piece.pieceMoves(Board, startPosition);
+
+        for (ChessMove move : possibleMoves){
+            // TODO: Create future state determining if the state would cause self check 
+
+        }
+
+        return possibleMoves;
     }
 
     /**
@@ -78,7 +91,8 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        return false;
+        //throw new RuntimeException("Not implemented");
     }
 
     /**
@@ -88,7 +102,8 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        return false;
+        //throw new RuntimeException("Not implemented");
     }
 
     /**
