@@ -91,7 +91,9 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
+        
         return false;
+
         //throw new RuntimeException("Not implemented");
     }
 
@@ -102,6 +104,7 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
+        //TODO: Create board states of all possible moves and determine if any of them remove check. If not checkmate. 
         return false;
         //throw new RuntimeException("Not implemented");
     }
