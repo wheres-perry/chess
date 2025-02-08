@@ -6,7 +6,7 @@ import java.util.Collection;
 /**
  * Represents a single chess piece
  */
-public class ChessPiece {
+public class ChessPiece implements Cloneable{
     /**
      * The various different chess piece options
      */
@@ -95,6 +95,17 @@ public class ChessPiece {
         }
     
         return output;
+    }
+
+    @Override
+    public ChessPiece clone() {
+        try {
+            // Shallow copy for primitives and immutable enums
+            ChessPiece cloned = (ChessPiece) super.clone();
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("Cloning failed for ChessPiece", e);
+        }
     }
 
     @Override

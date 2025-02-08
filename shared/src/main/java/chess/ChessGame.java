@@ -1,5 +1,6 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import chess.ChessPiece.PieceType;
@@ -7,7 +8,7 @@ import chess.ChessPiece.PieceType;
 /**
  * For a class that can manage a chess game, making moves on a board
  */
-public class ChessGame {
+public class ChessGame implements Cloneable{
 
     private TeamColor TeamTurn;
     private ChessBoard Board;
@@ -16,6 +17,11 @@ public class ChessGame {
     public ChessGame() {
         Board = new ChessBoard();
         TeamTurn = TeamColor.WHITE;
+    }
+
+    public ChessGame(TeamColor turn) {
+        Board = new ChessBoard();
+        TeamTurn = turn;
     }
 
     /**
@@ -61,27 +67,80 @@ public class ChessGame {
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = Board.getPiece(startPosition);
-        if (piece == null || (isInCheck(TeamTurn) && piece.getPieceType() != PieceType.KING)){
+        if (piece == null){ // Shouldn't reach this case but its a failsafe
             return(null);
         }
         Collection<ChessMove> possibleMoves =  piece.pieceMoves(Board, startPosition);
 
         for (ChessMove move : possibleMoves){
-            // TODO: Create future state determining if the state would cause self check 
+            try {
+                ChessGame hypotheticalBoard = this.clone();
+                hypotheticalBoard.makeMove(move);
+                if (!hypotheticalBoard.isInCheck(TeamTurn)){
+                    possibleMoves.add(move);
+                }
+            } catch (CloneNotSupportedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
 
         }
 
         return possibleMoves;
     }
 
+    public ArrayList<ChessPosition> getPieces(TeamColor color){
+        ArrayList<ChessPosition> pieces = new ArrayList<>();
+        for (int r = 1; r <= 8; r++){
+            for (int c = 1; c <= 8; c++){
+                ChessPosition pos = new ChessPosition(r, c);
+                ChessPiece p = Board.getPiece(pos);
+                if (p != null) {
+                    if (p.getTeamColor() == color){
+                        pieces.add(pos);
+                    }  
+                }
+            }
+        }
+        return pieces;
+    }
+
+    public Collection<ChessMove> allValidTeamMoves(TeamColor color){
+        ArrayList<ChessMove> teamMoves = new ArrayList<>(); 
+        ArrayList<ChessPosition> teamPieces = getPieces(color);
+        for (ChessPosition p : teamPieces){
+            Collection<ChessMove> m = validMoves(p); 
+            if (m != null){
+                teamMoves.addAll(teamMoves);
+            }
+        }
+        return teamMoves;
+    }
+
+
     /**
      * Makes a move in a chess game
      *
-     * @param move chess move to preform
+     * @param move chess move to perform
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        throw new RuntimeException("Not implemented");
+        ChessPosition start = move.getStartPosition();
+        ChessPosition end = move.getEndPosition();
+        ChessPiece piece = Board.getPiece(start);
+        if (piece == null){
+            throw new InvalidMoveException("Tried to move a non existent Piece");
+        }
+        Collection<ChessMove> validMoves = piece.pieceMoves(Board, start);
+        if (!validMoves.contains(move)) {
+            String errorMsg = String.format("Invalid move for %s at %s",
+                piece.getPieceType(),
+                start.toString()); // Use ChessPosition's built-in formatting
+            throw new InvalidMoveException(errorMsg);
+        }
+
+
+        // Passes all checks beyond here so to make a move.
     }
 
     /**
@@ -137,4 +196,23 @@ public class ChessGame {
     public ChessBoard getBoard() {
         return Board;
     }
+
+
+
+    @Override
+    public ChessGame clone() {
+        try {
+            ChessGame cloned = (ChessGame) super.clone();
+            
+            // Deep clone critical components
+            cloned.Board = this.Board.clone();  // Uses ChessBoard's clone()
+            cloned.TeamTurn = this.TeamTurn;    // Enum is immutable
+            cloned.turn = this.turn;            // Primitive value
+            
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("ChessGame cloning failed", e);
+        }
+    }
+
 }

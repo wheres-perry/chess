@@ -4,7 +4,7 @@ package chess;
  * A chessboard that can hold and rearrange chess pieces.
  * 
  */
-public class ChessBoard {
+public class ChessBoard implements Cloneable {
     private ChessPiece[][] boardMatrix = new ChessPiece[8][8];
 
     public ChessBoard() { // Default constructor no params
@@ -111,6 +111,22 @@ public class ChessBoard {
         }
 
     }
+
+  
+    @Override
+    public ChessBoard clone() throws CloneNotSupportedException {
+        ChessBoard cloned = (ChessBoard) super.clone();
+        cloned.boardMatrix = new ChessPiece[8][8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (boardMatrix[i][j] != null) {
+                    cloned.boardMatrix[i][j] = boardMatrix[i][j].clone(); // Requires ChessPiece to implement Cloneable
+                }
+            }
+        }
+        return cloned;
+    }
+        
 
     @Override
     public int hashCode() {
