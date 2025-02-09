@@ -73,15 +73,14 @@ public class ChessGame implements Cloneable{
         Collection<ChessMove> possibleMoves =  piece.pieceMoves(Board, startPosition);
 
         for (ChessMove move : possibleMoves){
+            ChessGame hypotheticalBoard = this.clone();
             try {
-                ChessGame hypotheticalBoard = this.clone();
                 hypotheticalBoard.makeMove(move);
-                if (!hypotheticalBoard.isInCheck(TeamTurn)){
-                    possibleMoves.add(move);
-                }
-            } catch (CloneNotSupportedException e) {
-                // TODO Auto-generated catch block
+            } catch (InvalidMoveException e) {
                 e.printStackTrace();
+            }
+            if (!hypotheticalBoard.isInCheck(TeamTurn)){
+                possibleMoves.add(move);
             }
 
         }
@@ -117,6 +116,19 @@ public class ChessGame implements Cloneable{
         return teamMoves;
     }
 
+    public Collection<ChessMove> allValidOpponentMoves(TeamColor color){
+        ArrayList<ChessMove> teamMoves = new ArrayList<>(); 
+        ArrayList<ChessPosition> teamPieces = getPieces(color.not());
+        for (ChessPosition p : teamPieces){
+            Collection<ChessMove> m = validMoves(p); 
+            if (m != null){
+                teamMoves.addAll(teamMoves);
+            }
+        }
+        return teamMoves;
+    }
+
+
 
     /**
      * Makes a move in a chess game
@@ -139,8 +151,8 @@ public class ChessGame implements Cloneable{
             throw new InvalidMoveException(errorMsg);
         }
 
-
-        // Passes all checks beyond here so to make a move.
+        Board.addPiece(end, piece);
+        Board.addPiece(start, null);
     }
 
     /**
@@ -150,10 +162,22 @@ public class ChessGame implements Cloneable{
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
+        Collection<ChessMove> opponentMoves = allValidOpponentMoves(teamColor);
+
+
+        for (ChessMove m : opponentMoves){
+            ChessPosition pos = m.getEndPosition();
+            ChessPiece p = Board.getPiece(pos);
+            if (p != null){
+                if (p.getTeamColor() == TeamTurn){
+                    if (p.getPieceType() == PieceType.KING){
+                        return true;
+                    }
+                } 
+            }
+        }
         
         return false;
-
-        //throw new RuntimeException("Not implemented");
     }
 
     /**
