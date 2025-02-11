@@ -14,14 +14,21 @@ public class ChessGame implements Cloneable {
     private ChessBoard Board;
     private int turn;
 
+    private TeamColor TeamTurn;
+    private ChessBoard Board;
+    private int turn;
+
     public ChessGame() {
         Board = new ChessBoard();
         TeamTurn = TeamColor.WHITE;
+<<<<<<< HEAD
     }
 
     public ChessGame(TeamColor turn) {
         Board = new ChessBoard();
         TeamTurn = turn;
+=======
+>>>>>>> Broken-Piece-Moves
     }
 
     /**
@@ -40,7 +47,11 @@ public class ChessGame implements Cloneable {
         TeamTurn = team;
     }
 
+<<<<<<< HEAD
     public void incrementTurn() {
+=======
+    public void incrementTurn(){
+>>>>>>> Broken-Piece-Moves
         TeamTurn = TeamTurn.not();
         turn += 1;
     }
@@ -50,7 +61,6 @@ public class ChessGame implements Cloneable {
      */
     public enum TeamColor {
         WHITE, BLACK;
-
         public TeamColor not() {
             if (this == WHITE) {
                 return BLACK;

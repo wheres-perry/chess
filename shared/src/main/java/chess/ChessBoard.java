@@ -8,11 +8,6 @@ public class ChessBoard implements Cloneable {
     private ChessPiece[][] boardMatrix = new ChessPiece[8][8];
 
     public ChessBoard() { // Default constructor no params
-        resetBoard();
-    }
-
-    public ChessBoard(String layout) { // Laying Groundwork for creating new board states based on a string
-        throw new RuntimeException("Not implemented");
     }
 
     /**
