@@ -6,7 +6,7 @@ import java.util.Collection;
 /**
  * Represents a single chess piece
  */
-public class ChessPiece implements Cloneable{
+public class ChessPiece implements Cloneable {
     /**
      * The various different chess piece options
      */
@@ -39,8 +39,6 @@ public class ChessPiece implements Cloneable{
         this.EPable = false;
     }
 
-    
-
     /**
      * @return Which team this chess piece belongs to
      */
@@ -64,7 +62,7 @@ public class ChessPiece implements Cloneable{
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
         Collection<ChessMove> output = new ArrayList<>();
-    
+
         switch (type) {
             case KING:
                 King king = new King(board, position, color);
@@ -93,7 +91,7 @@ public class ChessPiece implements Cloneable{
             default:
                 throw new IllegalArgumentException("Unexpected piece type: " + type);
         }
-    
+
         return output;
     }
 
@@ -173,4 +171,21 @@ public class ChessPiece implements Cloneable{
         }
 
     }
+
+    public boolean isHasMoved() {
+        return HasMoved;
+    }
+
+    public void setHasMoved(boolean hasMoved) {
+        HasMoved = hasMoved;
+    }
+
+    public boolean isEPable() {
+        return EPable;
+    }
+
+    public void setEPable(boolean ePable) {
+        EPable = ePable;
+    }
+
 }

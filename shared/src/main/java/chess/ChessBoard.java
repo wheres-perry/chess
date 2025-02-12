@@ -17,7 +17,7 @@ public class ChessBoard implements Cloneable {
      * @param piece    the piece to add
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
-        boardMatrix[position.getColumn() - 1][position.getRow() - 1] = piece;
+        boardMatrix[position.getRow() - 1][position.getColumn() - 1] = piece;
     }
 
     /**
@@ -28,7 +28,7 @@ public class ChessBoard implements Cloneable {
      *         position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        return boardMatrix[position.getColumn() - 1][position.getRow() - 1];
+        return boardMatrix[position.getRow() - 1][position.getColumn() - 1];
     }
 
     /**
@@ -107,7 +107,6 @@ public class ChessBoard implements Cloneable {
 
     }
 
-  
     @Override
     public ChessBoard clone() throws CloneNotSupportedException {
         ChessBoard cloned = (ChessBoard) super.clone();
@@ -121,7 +120,6 @@ public class ChessBoard implements Cloneable {
         }
         return cloned;
     }
-        
 
     @Override
     public int hashCode() {
