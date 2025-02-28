@@ -1,5 +1,7 @@
 package handlers;
 
+import requests.LogoutRequest;
+import results.LogoutResult;
 import spark.Request;
 import spark.Response;
 
@@ -19,13 +21,5 @@ public class LogoutHandler extends AbstractHandler {
             // TODO: Implement correct error handling
             return error(res, 500, "Error: " + e.getMessage());
         }
-    }
-
-    private static class LogoutRequest {
-        static String authToken;
-    }
-
-    private static class LogoutResult {
-        // Empty result
     }
 }
