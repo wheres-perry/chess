@@ -1,5 +1,5 @@
 package handlers;
-
+import services.ChessService;
 import requests.LogoutRequest;
 import results.LogoutResult;
 import spark.Request;
@@ -7,14 +7,18 @@ import spark.Response;
 
 public class LogoutHandler extends AbstractHandler {
 
+    private final ChessService chessService;
+    
+    public LogoutHandler(ChessService chessService) {
+        this.chessService = chessService;
+    }    
+
     @Override
     public Object handle(Request req, Response res) {
         try {
             LogoutRequest serviceRequest = deserialize(req, LogoutRequest.class);
-            // TODO: Implement actual logout logic
+            LogoutResult serviceResult = chessService.logout(serviceRequest);
 
-
-            LogoutResult serviceResult = new LogoutResult();
             return success(res, 200);
 
         } catch (Exception e) {

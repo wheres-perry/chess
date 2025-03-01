@@ -2,6 +2,7 @@ package server;
 
 import spark.*;
 import handlers.*;
+import services.ChessService;
 
 
 public class Server {
@@ -11,13 +12,15 @@ public class Server {
 
         Spark.staticFiles.location("web");
 
-        ClearHandler clearHandler = new ClearHandler();
-        RegisterHandler registerHandler = new RegisterHandler();
-        LoginHandler loginHandler = new LoginHandler();
-        LogoutHandler logoutHandler = new LogoutHandler();
-        ListHandler listGamesHandler = new ListHandler();
-        NewGameHandler createGameHandler = new NewGameHandler();
-        JoinHandler joinGameHandler = new JoinHandler();
+        ChessService chessService = new ChessService();
+
+        ClearHandler clearHandler = new ClearHandler(chessService);
+        RegisterHandler registerHandler = new RegisterHandler(chessService);
+        LoginHandler loginHandler = new LoginHandler(chessService);
+        LogoutHandler logoutHandler = new LogoutHandler(chessService);
+        ListHandler listGamesHandler = new ListHandler(chessService);
+        NewGameHandler createGameHandler = new NewGameHandler(chessService);
+        JoinHandler joinGameHandler = new JoinHandler(chessService);
 
         Spark.delete("/db", (req, res) -> clearHandler.handle(req, res));
         Spark.post("/user", (req, res) -> registerHandler.handle(req, res));

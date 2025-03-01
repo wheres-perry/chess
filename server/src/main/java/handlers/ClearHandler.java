@@ -1,18 +1,23 @@
 package handlers;
 
+import services.ChessService;
 import spark.Request;
 import spark.Response;
 
 public class ClearHandler extends AbstractHandler {
+    private final ChessService chessService;
+    
+    public ClearHandler(ChessService chessService) {
+        this.chessService = chessService;
+    }    
 
     @Override
     public Object handle(Request req, Response res) {
         try {
-            // TODO: put service code here
+            chessService.clear();
             return success(res, 200);
         } catch (Exception e) {
             return error(res, 500, "Error: " + e.getMessage());
         }
     }
-    // No request class needed, it just needs to call the function from the service
 }
