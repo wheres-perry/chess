@@ -2,7 +2,7 @@ package handlers;
 
 import requests.RegisterRequest;
 import results.RegisterResult;
-import services.ChessService;
+import service.ChessService;
 import spark.Request;
 import spark.Response;
 

@@ -2,7 +2,7 @@ package server;
 
 import spark.*;
 import handlers.*;
-import services.ChessService;
+import service.ChessService;
 
 
 public class Server {

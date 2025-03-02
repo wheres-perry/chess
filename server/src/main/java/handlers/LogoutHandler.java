@@ -1,7 +1,7 @@
 package handlers;
-import services.ChessService;
 import requests.LogoutRequest;
 import results.LogoutResult;
+import service.ChessService;
 import spark.Request;
 import spark.Response;
 

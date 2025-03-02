@@ -1,6 +1,6 @@
 package handlers;
 
-import services.ChessService;
+import service.ChessService;
 import spark.Request;
 import spark.Response;
 

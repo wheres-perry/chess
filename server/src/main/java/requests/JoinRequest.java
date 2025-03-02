@@ -1,17 +1,21 @@
 package requests;
 
 public class JoinRequest {
-    String gameID; // 
-    private String authToken; // TODO: convert to auth token type
-    public String getGameID() {
+    int gameID; //
+    private String authToken; 
+
+    public int getGameID() {
         return gameID;
     }
-    public void setGameID(String gameID) {
+
+    public void setGameID(int gameID) {
         this.gameID = gameID;
     }
+
     public String getAuthToken() {
         return authToken;
     }
+
     public void setAuthToken(String authToken) {
         this.authToken = authToken;
     }

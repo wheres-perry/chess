@@ -2,7 +2,7 @@ package handlers;
 
 import requests.LoginRequest;
 import results.LoginResult;
-import services.ChessService;
+import service.ChessService;
 import spark.Request;
 import spark.Response;
 
@@ -19,7 +19,7 @@ public class LoginHandler extends AbstractHandler {
         try {
             LoginRequest serviceRequest = deserialize(req, LoginRequest.class);
             LoginResult serviceResult = chessService.login(serviceRequest);
-
+                    
 
 
             return success(res, 200, serviceResult);

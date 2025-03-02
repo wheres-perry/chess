@@ -7,7 +7,7 @@ import java.util.List;
 import model.GameData;
 import requests.ListRequest;
 import results.ListResult;
-import services.ChessService;
+import service.ChessService;
 
 public class ListHandler extends AbstractHandler {
     private final ChessService chessService;

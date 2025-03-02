@@ -1,4 +1,4 @@
-package services;
+package service;
 
 import model.*;
 import requests.*;
@@ -27,6 +27,7 @@ public class ChessService {
      * @return Registration result with auth token
      */
     public RegisterResult register(RegisterRequest request) {
+        
         return new RegisterResult("Test", "test");
     }
 
