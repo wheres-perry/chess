@@ -1,5 +1,4 @@
 package results;
 
-public class LogoutResult {
-    // Empty result
+public record LogoutResult() {
 }

@@ -1,12 +1,7 @@
 package results;
 
-import java.util.List;
 import model.GameData;
+import java.util.Collection;
 
-public class ListResult {
-    private final List<GameData> games;
-
-    public ListResult(List<GameData> games) {
-        this.games = games;
-    }
+public record ListResult(Collection<GameData> games) {
 }

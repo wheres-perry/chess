@@ -1,6 +1,4 @@
 package requests;
 
-public class NewGameRequest {
-    private String authToken;
-    private String gameName;
+public record NewGameRequest(String gameName, String authToken) {
 }

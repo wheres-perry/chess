@@ -1,5 +1,4 @@
 package requests;
 
-public class LogoutRequest {
-    static String authToken;
+public record LogoutRequest(String authToken) {
 }

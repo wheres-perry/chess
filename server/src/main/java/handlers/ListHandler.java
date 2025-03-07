@@ -2,9 +2,6 @@ package handlers;
 
 import spark.Request;
 import spark.Response;
-import java.util.ArrayList;
-import java.util.List;
-import model.GameData;
 import requests.ListRequest;
 import results.ListResult;
 import service.ChessService;
