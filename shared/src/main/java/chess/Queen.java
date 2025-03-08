@@ -24,7 +24,7 @@ public class Queen extends ChessMovesCalculator {
 
         Collection<ChessMove> output = new ArrayList<>();
         for (ChessMove.Direction dir : dirs) {
-            output.addAll(LinearMove(dir, board, position, 8));
+            output.addAll(linearMove(dir, board, position, 8));
         }
         return output;
     }

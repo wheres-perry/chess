@@ -11,21 +11,21 @@ import chess.ChessPiece.PieceType;
  */
 public class ChessGame {
 
-    private TeamColor TeamTurn;
+    private TeamColor teamTurn;
     private ChessBoard Board;
     // private int turn;
 
     public ChessGame() {
         Board = new ChessBoard();
         Board.resetBoard();
-        TeamTurn = TeamColor.WHITE;
+        teamTurn = TeamColor.WHITE;
     }
 
     /**
      * @return Which team's turn it is
      */
     public TeamColor getTeamTurn() {
-        return TeamTurn;
+        return teamTurn;
     }
 
     /**
@@ -34,11 +34,11 @@ public class ChessGame {
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
-        TeamTurn = team;
+        teamTurn = team;
     }
 
     public void incrementTurn() {
-        TeamTurn = TeamTurn.not();
+        teamTurn = teamTurn.not();
         // turn += 1;
     }
 
@@ -171,7 +171,7 @@ public class ChessGame {
             throw new InvalidMoveException(errorMsg);
         }
 
-        if (piece.getTeamColor() != TeamTurn) { //
+        if (piece.getTeamColor() != teamTurn) { //
             String errorMsg = String.format("Tried to move an enemy piece: %s at %s",
                     piece.getPieceType(), start.toString());
             throw new InvalidMoveException(errorMsg);

@@ -74,25 +74,33 @@ public class ChessMove {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         ChessMove other = (ChessMove) obj;
         if (start == null) {
-            if (other.start != null)
+            if (other.start != null) {
                 return false;
-        } else if (!start.equals(other.start))
+            }
+        } else if (!start.equals(other.start)) {
             return false;
+        }
         if (end == null) {
-            if (other.end != null)
+            if (other.end != null) {
                 return false;
-        } else if (!end.equals(other.end))
+            }
+        } else if (!end.equals(other.end)) {
             return false;
-        if (promoPiece != other.promoPiece)
+        }
+        if (promoPiece != other.promoPiece) {
             return false;
+        }
         return true;
     }
 

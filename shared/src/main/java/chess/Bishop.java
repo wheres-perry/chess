@@ -9,7 +9,6 @@ public class Bishop extends ChessMovesCalculator {
     public Bishop(ChessBoard board, ChessPosition position, ChessGame.TeamColor color) {
         super(color, ChessPiece.PieceType.BISHOP, board, position);
     }
-    
 
     @Override
     final public Collection<ChessMove> moves() {
@@ -22,7 +21,7 @@ public class Bishop extends ChessMovesCalculator {
         Collection<ChessMove> output = new ArrayList<>();
 
         for (ChessMove.Direction dir : dirs) {
-            Collection<ChessMove> m = LinearMove(dir, board, position, 8);
+            Collection<ChessMove> m = linearMove(dir, board, position, 8);
             output.addAll(m);
         }
         return output;

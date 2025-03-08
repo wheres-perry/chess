@@ -13,7 +13,7 @@ public class Pawn extends ChessMovesCalculator {
 
     int promoRow;
 
-    final public Collection<ChessMove> PromotionWrapper(ChessPosition target) {
+    final public Collection<ChessMove> promotionWrapper(ChessPosition target) {
         Collection<ChessMove> moves = new ArrayList<>();
         if (color == ChessGame.TeamColor.BLACK) {
             promoRow = 1;
@@ -33,14 +33,14 @@ public class Pawn extends ChessMovesCalculator {
         return moves;
     }
 
-    final public boolean IsFree(ChessPosition target) {
-        if (!target.InBounds()) {
+    final public boolean isFree(ChessPosition target) {
+        if (!target.inBounds()) {
             return false;
         }
-        if (IsFriend(board, target)) {
+        if (isFriend(board, target)) {
             return false;
         }
-        if (IsEnemy(board, target)) {
+        if (isEnemy(board, target)) {
             return false;
         }
         return true;
@@ -49,8 +49,8 @@ public class Pawn extends ChessMovesCalculator {
     @Override
     final public Collection<ChessMove> moves() {
         Collection<ChessMove> output = new ArrayList<>();
-        final int row_pos = position.getRow();
-        final int col_pos = position.getColumn();
+        final int rowPos = position.getRow();
+        final int colPos = position.getColumn();
 
         ChessPosition attackSquare1 = null;
         ChessPosition attackSquare2 = null;
@@ -58,50 +58,37 @@ public class Pawn extends ChessMovesCalculator {
         ChessPosition firstMove = null;
 
         if (color == ChessGame.TeamColor.BLACK) {
-            attackSquare1 = new ChessPosition(row_pos - 1, col_pos + 1);
-            attackSquare2 = new ChessPosition(row_pos - 1, col_pos - 1);
-            forwardSquare = new ChessPosition(row_pos - 1, col_pos);
-            firstMove = new ChessPosition(5, col_pos);
+            attackSquare1 = new ChessPosition(rowPos - 1, colPos + 1);
+            attackSquare2 = new ChessPosition(rowPos - 1, colPos - 1);
+            forwardSquare = new ChessPosition(rowPos - 1, colPos);
+            firstMove = new ChessPosition(5, colPos);
 
         } else {
-            attackSquare1 = new ChessPosition(row_pos + 1, col_pos + 1);
-            attackSquare2 = new ChessPosition(row_pos + 1, col_pos - 1);
-            forwardSquare = new ChessPosition(row_pos + 1, col_pos);
-            firstMove = new ChessPosition(4, col_pos);
+            attackSquare1 = new ChessPosition(rowPos + 1, colPos + 1);
+            attackSquare2 = new ChessPosition(rowPos + 1, colPos - 1);
+            forwardSquare = new ChessPosition(rowPos + 1, colPos);
+            firstMove = new ChessPosition(4, colPos);
         }
-        // TODO: Implement En Passant
-        // ChessPosition EPSquare1 = new ChessPosition(row_pos, col_pos+1);
-        // ChessPosition EPSquare2 = new ChessPosition(row_pos, col_pos-1);
-        // Some check to see if square is occupied with recently moved pawn
-        // Then add diagonal attack to the moveset
 
-        // Autograder doesn't like my implementation
-        // if (!HasMoved){
-        // if (IsFree(firstMove)){
-        // output.addAll(PromotionWrapper(firstMove));
-        // }
-        // }
-
-        // Forward Movement
         int doubleRow;
         if (color == ChessGame.TeamColor.BLACK) {
             doubleRow = 7;
         } else {
             doubleRow = 2;
         }
-        if (IsFree(forwardSquare)) {
-            output.addAll(PromotionWrapper(forwardSquare));
+        if (isFree(forwardSquare)) {
+            output.addAll(promotionWrapper(forwardSquare));
             if ((position.getRow() == doubleRow) && (board.getPiece(firstMove) == null)) {
-                output.addAll(PromotionWrapper(firstMove));
+                output.addAll(promotionWrapper(firstMove));
             }
         }
 
         // Attack Movement
-        if (attackSquare1.InBounds() && IsEnemy(board, attackSquare1)) {
-            output.addAll(PromotionWrapper(attackSquare1));
+        if (attackSquare1.inBounds() && isEnemy(board, attackSquare1)) {
+            output.addAll(promotionWrapper(attackSquare1));
         }
-        if (attackSquare2.InBounds() && IsEnemy(board, attackSquare2)) {
-            output.addAll(PromotionWrapper(attackSquare2));
+        if (attackSquare2.inBounds() && isEnemy(board, attackSquare2)) {
+            output.addAll(promotionWrapper(attackSquare2));
         }
 
         return output;

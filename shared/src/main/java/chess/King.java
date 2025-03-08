@@ -12,7 +12,6 @@ public class King extends ChessMovesCalculator {
 
     @Override
     final public Collection<ChessMove> moves() {
-        // TODO Implement Castling
         final List<ChessMove.Direction> dirs = List.of(
                 ChessMove.Direction.N,
                 ChessMove.Direction.E,
@@ -26,7 +25,7 @@ public class King extends ChessMovesCalculator {
         Collection<ChessMove> output = new ArrayList<>();
 
         for (ChessMove.Direction dir : dirs) {
-            Collection<ChessMove> m = LinearMove(dir, board, position, 1);
+            Collection<ChessMove> m = linearMove(dir, board, position, 1);
             output.addAll(m);
         }
         return output;

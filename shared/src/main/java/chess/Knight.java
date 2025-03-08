@@ -26,10 +26,10 @@ public class Knight extends ChessMovesCalculator {
         for (int[] coord : KNIGHT_COORDS) {
             ChessPosition target = new ChessPosition(position.getRow() + coord[0], position.getColumn() + coord[1]);
 
-            if (!target.InBounds()) {
+            if (!target.inBounds()) {
                 continue;
             }
-            if (IsFriend(board, target)) {
+            if (isFriend(board, target)) {
                 continue;
             }
             output.add(new ChessMove(position, target));

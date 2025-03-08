@@ -2,9 +2,6 @@ package handlers;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import dataaccess.AuthDAO;
-import dataaccess.DataAccessException;
-import model.AuthData;
 import spark.Request;
 import spark.Response;
 
@@ -40,19 +37,6 @@ public abstract class AbstractHandler {
      * @throws DataAccessException If database operations encounter issues
      * @throws RuntimeException    If authentication is invalid or missing
      */
-    protected String validateAuthToken(Request req, AuthDAO authDAO) throws DataAccessException {
-        String authToken = req.headers("authorization");
-        if (authToken == null || authToken.isEmpty()) {
-            throw new RuntimeException("Error: unauthorized");
-        }
-
-        AuthData authData = authDAO.getAuth(authToken);
-        if (authData == null) {
-            throw new RuntimeException("Error: unauthorized");
-        }
-
-        return authData.username();
-    }
 
     /**
      * Transforms JSON request content into corresponding Java objects.

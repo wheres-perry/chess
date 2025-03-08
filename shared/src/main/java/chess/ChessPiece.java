@@ -21,22 +21,19 @@ public class ChessPiece implements Cloneable {
 
     protected final ChessGame.TeamColor color;
     protected final ChessPiece.PieceType type;
-    protected boolean HasMoved;
-    protected boolean EPable;
+    protected boolean hasMoved;
 
-    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean HasMoved,
-            boolean EPable) { // Overloaded constructor
+    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type, boolean hasMoved) { // Overloaded
+                                                                                                     // constructor
         this.color = pieceColor;
         this.type = type;
-        this.HasMoved = HasMoved;
-        this.EPable = EPable;
+        this.hasMoved = hasMoved;
     }
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) { // Overloaded constructor
         this.color = pieceColor;
         this.type = type;
-        this.HasMoved = false;
-        this.EPable = false;
+        this.hasMoved = false;
     }
 
     /**
@@ -117,17 +114,22 @@ public class ChessPiece implements Cloneable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         ChessPiece other = (ChessPiece) obj;
-        if (color != other.color)
+        if (color != other.color) {
             return false;
-        if (type != other.type)
+        }
+        if (type != other.type) {
             return false;
+        }
         return true;
     }
 
@@ -173,19 +175,11 @@ public class ChessPiece implements Cloneable {
     }
 
     public boolean isHasMoved() {
-        return HasMoved;
+        return hasMoved;
     }
 
-    public void setHasMoved(boolean hasMoved) {
-        HasMoved = hasMoved;
-    }
-
-    public boolean isEPable() {
-        return EPable;
-    }
-
-    public void setEPable(boolean ePable) {
-        EPable = ePable;
+    public void setHasMoved(boolean moved) {
+        hasMoved = moved;
     }
 
 }

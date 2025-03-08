@@ -20,7 +20,7 @@ public abstract class ChessMovesCalculator extends ChessPiece {
 
     public abstract Collection<ChessMove> moves();
 
-    public boolean IsFriend(ChessBoard board, ChessPosition target) {
+    public boolean isFriend(ChessBoard board, ChessPosition target) {
         ChessPiece piece = board.getPiece(target);
         if (piece == null) {
             return false;
@@ -32,7 +32,7 @@ public abstract class ChessMovesCalculator extends ChessPiece {
         }
     }
 
-    public boolean IsEnemy(ChessBoard board, ChessPosition target) {
+    public boolean isEnemy(ChessBoard board, ChessPosition target) {
         ChessPiece piece = board.getPiece(target);
         if (piece == null) {
             return false;
@@ -44,12 +44,12 @@ public abstract class ChessMovesCalculator extends ChessPiece {
         }
     }
 
-    final public Collection<ChessMove> LinearMove(ChessMove.Direction dir, ChessBoard board, ChessPosition myPosition,
+    final public Collection<ChessMove> linearMove(ChessMove.Direction dir, ChessBoard board, ChessPosition myPosition,
             int distance) {
-        if (distance < 0){
+        if (distance < 0) {
             throw new IllegalArgumentException("Distance is a scalar (cannot be negative)");
         }
-        
+
         Collection<ChessMove> moves = new ArrayList<>();
         final int row_pos = myPosition.getRow();
         final int col_pos = myPosition.getColumn();
@@ -91,19 +91,19 @@ public abstract class ChessMovesCalculator extends ChessPiece {
                 colOffset = -1;
                 break;
             default:
-                throw new IllegalArgumentException("Invalid direction passed to LinearMove");
+                throw new IllegalArgumentException("Invalid direction passed to linearMove");
         }
         for (int i = 1; i <= distance; i++) {
             ChessPosition target = new ChessPosition(row_pos + i * rowOffset,
                     col_pos + i * colOffset);
-            if (!target.InBounds()) {
+            if (!target.inBounds()) {
                 break;
             }
-            if (IsFriend(board, target)) {
+            if (isFriend(board, target)) {
                 break;
             }
             moves.add(new ChessMove(myPosition, target));
-            if (IsEnemy(board, target)) {
+            if (isEnemy(board, target)) {
                 break;
             }
         }

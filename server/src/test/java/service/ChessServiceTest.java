@@ -16,10 +16,10 @@ import chess.ChessGame.TeamColor;
 public class ChessServiceTest {
 
     private ChessService services;
-    private final String SAMPLE_USERNAME = "Test_User";
-    private final String SAMPLE_PASSWORD = "passwordisabadpassword";
-    private final String SAMPLE_EMAIL = "user@myspace.com";
-    private final String SAMPLE_GAME_TITLE = "World Chess Championship";
+    static private final String SAMPLE_USERNAME = "Test_User";
+    static private final String SAMPLE_PASSWORD = "passwordisabadpassword";
+    static private final String SAMPLE_EMAIL = "user@myspace.com";
+    static private final String SAMPLE_GAME_TITLE = "World Chess Championship";
 
     // Start each test with a clean state
     @BeforeEach
