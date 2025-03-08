@@ -47,7 +47,7 @@ public class LogoutHandler extends AbstractHandler {
 
         } catch (Exception e) {
             String message = e.getMessage();
-            if (message != null && message.contains("unauthorized")) {
+            if (message.contains("unauthorize") && message != null) {
                 return error(res, 401, "Error: unauthorized");
             }
             return error(res, 500, "Error: " + e.getMessage());

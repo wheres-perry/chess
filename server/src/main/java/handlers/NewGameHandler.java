@@ -52,9 +52,9 @@ public class NewGameHandler extends AbstractHandler {
         } catch (Exception e) {
             String message = e.getMessage();
             if (message != null) {
-                if (message.contains("unauthorized")) {
+                if (message.contains("unauth")) {
                     return error(res, 401, "Error: unauthorized");
-                } else if (message.contains("bad request")) {
+                } else if (message.contains("bad req")) {
                     return error(res, 400, "Error: bad request");
                 }
             }

@@ -51,8 +51,8 @@ public abstract class ChessMovesCalculator extends ChessPiece {
         }
 
         Collection<ChessMove> moves = new ArrayList<>();
-        final int row_pos = myPosition.getRow();
-        final int col_pos = myPosition.getColumn();
+        final int rowPos = myPosition.getRow();
+        final int colPos = myPosition.getColumn();
 
         int rowOffset = 0;
         int colOffset = 0;
@@ -94,8 +94,8 @@ public abstract class ChessMovesCalculator extends ChessPiece {
                 throw new IllegalArgumentException("Invalid direction passed to linearMove");
         }
         for (int i = 1; i <= distance; i++) {
-            ChessPosition target = new ChessPosition(row_pos + i * rowOffset,
-                    col_pos + i * colOffset);
+            ChessPosition target = new ChessPosition(rowPos + i * rowOffset,
+                    colPos + i * colOffset);
             if (!target.inBounds()) {
                 break;
             }

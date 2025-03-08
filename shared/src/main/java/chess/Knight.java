@@ -12,7 +12,7 @@ public class Knight extends ChessMovesCalculator {
 
     @Override
     final public Collection<ChessMove> moves() {
-        final List<int[]> KNIGHT_COORDS = List.of(
+        final List<int[]> knightCoords = List.of(
                 new int[] { 1, 2 },
                 new int[] { 2, 1 },
                 new int[] { -1, 2 },
@@ -23,7 +23,7 @@ public class Knight extends ChessMovesCalculator {
                 new int[] { -2, -1 });
 
         Collection<ChessMove> output = new ArrayList<>();
-        for (int[] coord : KNIGHT_COORDS) {
+        for (int[] coord : knightCoords) {
             ChessPosition target = new ChessPosition(position.getRow() + coord[0], position.getColumn() + coord[1]);
 
             if (!target.inBounds()) {

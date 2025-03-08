@@ -12,12 +12,12 @@ import chess.ChessPiece.PieceType;
 public class ChessGame {
 
     private TeamColor teamTurn;
-    private ChessBoard Board;
+    private ChessBoard board;
     // private int turn;
 
     public ChessGame() {
-        Board = new ChessBoard();
-        Board.resetBoard();
+        board = new ChessBoard();
+        board.resetBoard();
         teamTurn = TeamColor.WHITE;
     }
 
@@ -64,26 +64,26 @@ public class ChessGame {
      *         startPosition
      */
     public HashSet<ChessMove> validMoves(ChessPosition startPosition) {
-        ChessPiece piece = Board.getPiece(startPosition);
+        ChessPiece piece = board.getPiece(startPosition);
         if (piece == null) {
             return null;
         }
 
         HashSet<ChessMove> validMoves = new HashSet<>();
-        Collection<ChessMove> possibleMoves = piece.pieceMoves(Board, startPosition);
+        Collection<ChessMove> possibleMoves = piece.pieceMoves(board, startPosition);
 
         for (ChessMove move : possibleMoves) {
-            ChessPiece existingChessPiece = Board.getPiece(move.getEndPosition());
+            ChessPiece existingChessPiece = board.getPiece(move.getEndPosition());
             // Makes move to see if its possible
-            Board.addPiece(move.getEndPosition(), piece);
-            Board.addPiece(startPosition, null);
+            board.addPiece(move.getEndPosition(), piece);
+            board.addPiece(startPosition, null);
             // Ensures it doesn't leave king in check
             if (!isInCheck(piece.getTeamColor())) {
                 validMoves.add(move);
             }
             // Undo move and reverts everything
-            Board.addPiece(startPosition, piece);
-            Board.addPiece(move.getEndPosition(), existingChessPiece);
+            board.addPiece(startPosition, piece);
+            board.addPiece(move.getEndPosition(), existingChessPiece);
         }
 
         return validMoves;
@@ -100,7 +100,7 @@ public class ChessGame {
         for (int r = 1; r <= 8; r++) {
             for (int c = 1; c <= 8; c++) {
                 ChessPosition pos = new ChessPosition(r, c);
-                ChessPiece p = Board.getPiece(pos);
+                ChessPiece p = board.getPiece(pos);
                 if (p != null && p.getTeamColor() == color) {
                     pieces.add(pos);
                 }
@@ -153,7 +153,7 @@ public class ChessGame {
         ChessPosition end = move.getEndPosition();
 
         ChessPiece.PieceType promo = move.getPromotionPiece();
-        ChessPiece piece = Board.getPiece(start);
+        ChessPiece piece = board.getPiece(start);
 
         HashSet<ChessMove> startPieceValidMoves = validMoves(start);
 
@@ -177,7 +177,7 @@ public class ChessGame {
             throw new InvalidMoveException(errorMsg);
         }
 
-        applyMove(Board, start, end, piece, promo);
+        applyMove(board, start, end, piece, promo);
     }
 
     /**
@@ -187,7 +187,7 @@ public class ChessGame {
         for (int r = 1; r <= 8; r++) {
             for (int c = 1; c <= 8; c++) {
                 ChessPosition pos = new ChessPosition(r, c);
-                ChessPiece piece = Board.getPiece(pos);
+                ChessPiece piece = board.getPiece(pos);
                 if (piece != null &&
                         piece.getPieceType() == PieceType.KING &&
                         piece.getTeamColor() == teamColor) {
@@ -212,9 +212,9 @@ public class ChessGame {
         // We have to iterate instead of use allValidMoves to avoid infinite recursion
         ArrayList<ChessPosition> opponentPositions = getPieces(teamColor.not());
         for (ChessPosition pos : opponentPositions) {
-            ChessPiece enemyPiece = Board.getPiece(pos);
+            ChessPiece enemyPiece = board.getPiece(pos);
             // Get moves without applying check validation.
-            Collection<ChessMove> pseudoMoves = enemyPiece.pieceMoves(Board, pos);
+            Collection<ChessMove> pseudoMoves = enemyPiece.pieceMoves(board, pos);
             for (ChessMove move : pseudoMoves) {
                 if (move.getEndPosition().equals(kingToCheckPos)) {
                     return true;
@@ -267,8 +267,8 @@ public class ChessGame {
      *
      * @param board the new board to use
      */
-    public void setBoard(ChessBoard board) {
-        Board = board;
+    public void setBoard(ChessBoard bd) {
+        board = bd;
     }
 
     /**
@@ -277,7 +277,7 @@ public class ChessGame {
      * @return the chessboard
      */
     public ChessBoard getBoard() {
-        return Board;
+        return board;
     }
 
 }
