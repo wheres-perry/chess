@@ -8,86 +8,84 @@ import chess.ChessGame.TeamColor;
 
 import java.util.Collection;
 
-// Auto generated comments
-
 public class ChessService {
     private final UserDAO userDAO;
     private final GameDAO gameDAO;
     private final AuthDAO authDAO;
 
     /**
-     * Constructs a chess service with specific data access components.
-     * Establishes connections to the persistence layer through provided DAOs.
-     * 
-     * @param userDAO Repository for player account information
-     * @param gameDAO Repository for chess match data storage
-     * @param authDAO Repository for authentication token management
+     * Constructor with DAO dependencies.
+     *
+     * @param userDAO User data access.
+     * @param gameDAO Game data access.
+     * @param authDAO Auth data access.
      */
     public ChessService(UserDAO userDAO, GameDAO gameDAO, AuthDAO authDAO) {
-        this.userDAO = userDAO;
-        this.gameDAO = gameDAO;
         this.authDAO = authDAO;
+        this.gameDAO = gameDAO;
+        this.userDAO = userDAO;
     }
 
     /**
-     * Initializes a self-contained chess service using in-memory storage
-     * mechanisms.
-     * Creates volatile repositories suitable for testing or ephemeral sessions.
+     * Constructor for in-memory data access.
      */
     public ChessService() {
-        this.userDAO = new UserDAOMemory();
-        this.gameDAO = new GameDAOMemory();
-        this.authDAO = new AuthDAOMemory();
+        UserDAO userStorage = new UserDAOMemory();
+        GameDAO gameStorage = new GameDAOMemory();
+        AuthDAO authStorage = new AuthDAOMemory();
+
+        this.userDAO = userStorage;
+        this.gameDAO = gameStorage;
+        this.authDAO = authStorage;
     }
 
     /**
-     * Purges all persistent data from the system repositories.
-     * Resets the entire application state to its factory configuration.
-     * 
-     * @throws DataAccessException When data elimination operations encounter errors
+     * Clear all data.
+     *
+     * @throws DataAccessException Data access error.
      */
     public void clear() throws DataAccessException {
+        authDAO.clear();
         userDAO.clear();
         gameDAO.clear();
-        authDAO.clear();
     }
 
     /**
-     * Establishes a new player account in the system.
-     * Validates registration details, ensures uniqueness, and generates
-     * authentication credentials.
-     * 
-     * @param request Candidate user details including identity and verification
-     *                information
-     * @return Authentication package containing user recognition credentials
-     * @throws DataAccessException When persistence operations encounter errors
+     * Register new user.
+     *
+     * @param request Register request.
+     * @return Register result.
+     * @throws DataAccessException Data access error.
      */
     public RegisterResult register(RegisterRequest request) throws DataAccessException {
-        if (request.username() == null || request.password() == null || request.email() == null ||
-                request.username().isEmpty() || request.password().isEmpty()) {
+        String playerName = request.username();
+        String playerPass = request.password();
+        String playerEmail = request.email();
+
+        boolean invalidInput = playerName == null || playerPass == null || playerEmail == null ||
+                playerName.isEmpty() || playerPass.isEmpty();
+
+        if (invalidInput) {
             throw new RuntimeException("Error: bad request");
         }
 
-        if (userDAO.getUser(request.username()) != null) {
+        if (userDAO.getUser(playerName) != null) {
             throw new RuntimeException("Error: already taken");
         }
 
-        UserData user = new UserData(request.username(), request.password(), request.email());
-        userDAO.createUser(user);
+        UserData playerData = new UserData(playerName, playerPass, playerEmail);
+        userDAO.createUser(playerData);
 
-        String authToken = authDAO.createAuth(request.username());
-
-        return new RegisterResult(request.username(), authToken);
+        String sessionToken = authDAO.createAuth(playerName);
+        return new RegisterResult(playerName, sessionToken);
     }
 
     /**
-     * Authenticates an existing user and establishes a session.
-     * Validates provided credentials against stored values and creates a secure
-     * token.
-     * 
-     * @param request User identification and verification information
-     * @return Session establishment package with authentication token
-     * @throws DataAccessException When persistence operations encounter errors
+     * Login user.
+     *
+     * @param request Login request.
+     * @return Login result.
+     * @throws DataAccessException Data access error.
      */
     public LoginResult login(LoginRequest request) throws DataAccessException {
         if (request.username() == null || request.password() == null) {
@@ -95,40 +93,41 @@ public class ChessService {
         }
 
         UserData user = userDAO.getUser(request.username());
-        if (user == null || !user.password().equals(request.password())) {
+        boolean credentialsInvalid = user == null || !user.password().equals(request.password());
+
+        if (credentialsInvalid) {
             throw new RuntimeException("Error: unauthorized");
         }
 
         String authToken = authDAO.createAuth(request.username());
-
         return new LoginResult(request.username(), authToken);
     }
 
     /**
-     * Terminates an active user session.
-     * Invalidates the authentication token to prevent further authorized access.
-     * 
-     * @param request Session identification information
-     * @return Confirmation of successful session termination
-     * @throws DataAccessException When persistence operations encounter errors
+     * Logout user.
+     *
+     * @param request Logout request.
+     * @return Logout result.
+     * @throws DataAccessException Data access error.
      */
     public LogoutResult logout(LogoutRequest request) throws DataAccessException {
-        AuthData authData = authDAO.getAuth(request.authToken());
-        if (authData == null) {
+        String accessToken = request.authToken();
+        AuthData authInfo = authDAO.getAuth(accessToken);
+
+        if (authInfo == null) {
             throw new RuntimeException("Error: unauthorized");
         }
 
-        authDAO.deleteAuth(request.authToken());
+        authDAO.deleteAuth(accessToken);
         return new LogoutResult();
     }
 
     /**
-     * Retrieves the complete catalog of available chess matches.
-     * Provides authenticated users with access to the game collection.
-     * 
-     * @param request Session verification information
-     * @return Comprehensive inventory of current chess games
-     * @throws DataAccessException When retrieval operations encounter errors
+     * List all games.
+     *
+     * @param request List request.
+     * @return List result.
+     * @throws DataAccessException Data access error.
      */
     public ListResult listAll(ListRequest request) throws DataAccessException {
         AuthData authData = authDAO.getAuth(request.authToken());
@@ -137,48 +136,48 @@ public class ChessService {
         }
 
         Collection<GameData> games = gameDAO.listGames();
-
         return new ListResult(games);
     }
 
     /**
-     * Initiates a fresh chess competition instance.
-     * Establishes a new game environment with the specified identification.
-     * 
-     * @param request Game creation parameters with session verification
-     * @return Game establishment confirmation with unique identifier
-     * @throws DataAccessException When creation operations encounter errors
+     * Create new game.
+     *
+     * @param request New game request.
+     * @return New game result.
+     * @throws DataAccessException Data access error.
      */
     public NewGameResult newGame(NewGameRequest request) throws DataAccessException {
-        AuthData authData = authDAO.getAuth(request.authToken());
-        if (authData == null) {
+        String accessKey = request.authToken();
+        String matchName = request.gameName();
+
+        AuthData sessionData = authDAO.getAuth(accessKey);
+        if (sessionData == null) {
             throw new RuntimeException("Error: unauthorized");
         }
 
-        if (request.gameName() == null || request.gameName().isEmpty()) {
+        boolean emptyTitle = matchName == null || matchName.isEmpty();
+        if (emptyTitle) {
             throw new RuntimeException("Error: bad request");
         }
 
-        int gameID = gameDAO.createGame(request.gameName());
-
+        int gameID = gameDAO.createGame(matchName);
         return new NewGameResult(String.valueOf(gameID));
     }
 
     /**
-     * Enrolls a player into an existing chess match.
-     * Assigns users to their requested team position if available.
-     * 
-     * @param request Game participation details with position preference
-     * @return Enrollment confirmation with position assignment
-     * @throws DataAccessException When participation operations encounter errors
+     * Join existing game.
+     *
+     * @param request Join game request.
+     * @return Join game result.
+     * @throws DataAccessException Data access error.
      */
     public JoinResult joinGame(JoinRequest request) throws DataAccessException {
-        AuthData authData = authDAO.getAuth(request.authToken());
-        if (authData == null) {
-            throw new RuntimeException("Error: unauthorized");
-        }
-
         try {
+            AuthData authData = authDAO.getAuth(request.authToken());
+            if (authData == null) {
+                throw new RuntimeException("Error: unauthorized");
+            }
+
             int gameID = request.gameID();
             GameData gameData = gameDAO.getGame(gameID);
 
@@ -189,39 +188,39 @@ public class ChessService {
             TeamColor playerColor = request.playerColor();
             String username = authData.username();
 
-            if (playerColor != null) {
-                GameData updatedGame;
-
-                switch (playerColor) {
-                    case WHITE:
-                        if (gameData.whiteUsername() != null) {
-                            throw new RuntimeException("Error: already taken");
-                        }
-                        updatedGame = new GameData(
-                                gameID,
-                                username,
-                                gameData.blackUsername(),
-                                gameData.gameName(),
-                                gameData.game());
-                        break;
-                    case BLACK:
-                        if (gameData.blackUsername() != null) {
-                            throw new RuntimeException("Error: already taken");
-                        }
-                        updatedGame = new GameData(
-                                gameID,
-                                gameData.whiteUsername(),
-                                username,
-                                gameData.gameName(),
-                                gameData.game());
-                        break;
-                    default:
-                        throw new RuntimeException("Error: bad request");
-                }
-
-                gameDAO.updateGame(gameID, updatedGame);
+            if (playerColor == null) {
+                return new JoinResult(playerColor, gameData.gameName());
             }
 
+            GameData updatedGame;
+            switch (playerColor) {
+                case WHITE:
+                    if (gameData.whiteUsername() != null) {
+                        throw new RuntimeException("Error: already taken");
+                    }
+                    updatedGame = new GameData(
+                            gameID,
+                            username,
+                            gameData.blackUsername(),
+                            gameData.gameName(),
+                            gameData.game());
+                    break;
+                case BLACK:
+                    if (gameData.blackUsername() != null) {
+                        throw new RuntimeException("Error: already taken");
+                    }
+                    updatedGame = new GameData(
+                            gameID,
+                            gameData.whiteUsername(),
+                            username,
+                            gameData.gameName(),
+                            gameData.game());
+                    break;
+                default:
+                    throw new RuntimeException("Error: bad request");
+            }
+
+            gameDAO.updateGame(gameID, updatedGame);
             return new JoinResult(playerColor, gameData.gameName());
 
         } catch (NumberFormatException e) {
