@@ -5,7 +5,7 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
-*.properties
+db.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
