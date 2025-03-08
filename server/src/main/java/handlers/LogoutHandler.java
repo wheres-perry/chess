@@ -40,7 +40,7 @@ public class LogoutHandler extends AbstractHandler {
             }
 
             LogoutRequest serviceRequest = new LogoutRequest(authToken);
-            @SuppressWarnings("unused") //Stops warning because we don't need the result, I'm keeping it just for case
+            @SuppressWarnings("unused") // Stops warning because we don't need the result, I'm keeping it just for case
             LogoutResult serviceResult = chessService.logout(serviceRequest);
 
             return success(res, 200);
