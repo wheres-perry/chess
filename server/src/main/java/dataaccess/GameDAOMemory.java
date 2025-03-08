@@ -37,14 +37,7 @@ public class GameDAOMemory implements GameDAO {
     }
 
     @Override
-    public void updateGame(int gameID, GameData data) throws DataAccessException {
-        GameData game = games.get(gameID);
-        String whiteUsername = game.whiteUsername();
-        String blackUsername = game.blackUsername();
-        String gameName = game.gameName();
-        ChessGame chessGame = game.game();
-        if (game != null) {
-            games.put(gameID, new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame));
-        }
+    public void updateGame(int gameID, GameData game) throws DataAccessException {
+        games.put(gameID, game);
     }
 }
