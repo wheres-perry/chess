@@ -22,9 +22,11 @@ public class Pawn extends ChessMovesCalculator {
         }
 
         if (target.getRow() == promoRow) {
-            Collection<PieceType> PromotionPieces = List.of(PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK,
-                    PieceType.QUEEN);
-            for (PieceType p : PromotionPieces) {
+            Collection<PieceType> promotionPieces = List.of(PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK,
+                    PieceType.QUEEN); // How about you tell us what the style should be before we write all this code?
+                                      // I get it's supposed to be realistic for the future workplace but they would
+                                      // at least make it clear the code style we should use.
+            for (PieceType p : promotionPieces) {
                 moves.add(new ChessMove(position, target, p));
             }
         } else {
