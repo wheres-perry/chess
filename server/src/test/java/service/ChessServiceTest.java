@@ -1,7 +1,6 @@
 package service;
 
 import chess.ChessGame;
-import dataaccess.DataAccessException;
 import model.AuthData;
 import model.GameData;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +10,7 @@ import results.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import chess.ChessGame.TeamColor;
+import dataaccess.DataAccessException;
 
 @SuppressWarnings("unused")
 public class ChessServiceTest {

@@ -4,10 +4,20 @@ import model.*;
 import requests.*;
 import results.*;
 import dataaccess.*;
+import dataaccess.interfaces.GameDAO;
+import dataaccess.interfaces.AuthDAO;
+import dataaccess.interfaces.UserDAO;
+import dataaccess.implementations.MemoryGameDAO;
+import dataaccess.implementations.MemoryAuthDAO;
+import dataaccess.implementations.MemoryUserDAO;
+import dataaccess.implementations.MySQLGameDAO;
+import dataaccess.implementations.MySQLAuthDAO;
+import dataaccess.implementations.MySQLUserDAO;
 import chess.ChessGame.TeamColor;
 
 import java.util.Collection;
 
+@SuppressWarnings("unused")
 public class ChessService {
     private final UserDAO userDAO;
     private final GameDAO gameDAO;
@@ -30,9 +40,9 @@ public class ChessService {
      * Constructor for in-memory data access.
      */
     public ChessService() {
-        UserDAO userStorage = new UserDAOMemory();
-        GameDAO gameStorage = new GameDAOMemory();
-        AuthDAO authStorage = new AuthDAOMemory();
+        UserDAO userStorage = new MemoryUserDAO();
+        GameDAO gameStorage = new MemoryGameDAO();
+        AuthDAO authStorage = new MemoryAuthDAO();
 
         this.userDAO = userStorage;
         this.gameDAO = gameStorage;

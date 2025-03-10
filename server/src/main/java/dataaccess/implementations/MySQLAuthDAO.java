@@ -1,9 +1,8 @@
-package dataaccess;
+package dataaccess.implementations;
 
-import dataaccess.AuthDAO;
+import dataaccess.interfaces.AuthDAO;
 import dataaccess.DataAccessException;
 import model.AuthData;
-
 
 public class MySQLAuthDAO implements AuthDAO {
 

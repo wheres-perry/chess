@@ -1,12 +1,10 @@
-package dataaccess;
+package dataaccess.implementations;
 
 import dataaccess.DataAccessException;
-import dataaccess.DatabaseManager;
-import dataaccess.GameDAO;
+import dataaccess.interfaces.GameDAO;
+
 import java.util.Collection;
-import java.util.ArrayList;
 import model.GameData;
-import chess.ChessGame;
 
 /**
  * MySQL implementation of the GameDAO interface.

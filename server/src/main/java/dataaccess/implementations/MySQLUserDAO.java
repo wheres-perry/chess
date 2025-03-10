@@ -1,8 +1,9 @@
-package dataaccess;
+package dataaccess.implementations;
+
+
 
 import dataaccess.DataAccessException;
-import dataaccess.DatabaseManager;
-import dataaccess.UserDAO;
+import dataaccess.interfaces.UserDAO;
 import model.UserData;
 
 /**

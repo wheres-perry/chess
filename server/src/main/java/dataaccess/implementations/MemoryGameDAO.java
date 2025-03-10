@@ -1,7 +1,10 @@
-package dataaccess;
+package dataaccess.implementations;
 
 import model.GameData;
+import dataaccess.DataAccessException;
+import dataaccess.interfaces.GameDAO;
 import chess.ChessGame;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +12,7 @@ import java.util.Map;
 /**
  * In-memory implementation of GameDAO
  */
-public class GameDAOMemory implements GameDAO {
+public class MemoryGameDAO implements GameDAO {
     private final Map<Integer, GameData> games = new HashMap<>();
     private int nextID = 1;
 

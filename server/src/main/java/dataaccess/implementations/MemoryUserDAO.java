@@ -1,13 +1,16 @@
-package dataaccess;
+package dataaccess.implementations;
 
 import model.UserData;
 import java.util.HashMap;
+import dataaccess.interfaces.UserDAO;
 import java.util.Map;
+
+import dataaccess.DataAccessException;
 
 /**
  * In-memory implementation of UserDAO
  */
-public class UserDAOMemory implements UserDAO {
+public class MemoryUserDAO implements UserDAO {
     private final Map<String, UserData> users = new HashMap<>();
 
     @Override
