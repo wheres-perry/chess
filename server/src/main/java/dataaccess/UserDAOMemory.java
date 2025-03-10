@@ -24,4 +24,22 @@ public class UserDAOMemory implements UserDAO {
     public UserData getUser(String username) throws DataAccessException {
         return users.get(username);
     }
+
+    @Override
+    public String hashPassword(String password) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'hashPassword'");
+    }
+
+    @Override
+    public boolean checkPassword(String password, String hash) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'checkPassword'");
+    }
+
+    @Override
+    public boolean verifyPassword(String username, String password) throws DataAccessException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'verifyPassword'");
+    }
 }

@@ -19,6 +19,7 @@ public class MySQLGameDAO implements GameDAO {
    * @throws DataAccessException if there is an error creating the table
    */
   private void createTableIfNotExists() throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   public MySQLGameDAO() throws DataAccessException {
@@ -33,6 +34,7 @@ public class MySQLGameDAO implements GameDAO {
    */
   @Override
   public int createGame(String gameName) throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   /**
@@ -44,6 +46,7 @@ public class MySQLGameDAO implements GameDAO {
    */
   @Override
   public GameData getGame(int gameID) throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   /**
@@ -54,6 +57,7 @@ public class MySQLGameDAO implements GameDAO {
    */
   @Override
   public Collection<GameData> listGames() throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   /**
@@ -65,6 +69,7 @@ public class MySQLGameDAO implements GameDAO {
    */
   @Override
   public void updateGame(int gameID, GameData game) throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 
   /**
@@ -74,5 +79,6 @@ public class MySQLGameDAO implements GameDAO {
    */
   @Override
   public void clear() throws DataAccessException {
+    throw new UnsupportedOperationException("Not supported yet.");
   }
 }

@@ -4,10 +4,6 @@ import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import model.AuthData;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.util.Properties;
 
 public class MySQLAuthDAO implements AuthDAO {
 
@@ -20,13 +16,16 @@ public class MySQLAuthDAO implements AuthDAO {
 
     @Override
     public String createAuth(String username) throws DataAccessException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

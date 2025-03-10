@@ -10,8 +10,6 @@ import model.UserData;
  */
 public class MySQLUserDAO implements UserDAO {
 
-    private static final String DELIMITER = "$";
-
     /**
      * Creates the users table if it does not already exist.
      *
