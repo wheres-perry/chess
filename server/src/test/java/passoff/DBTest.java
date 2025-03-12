@@ -1,8 +1,9 @@
-package passoff.server;
+package passoff;
 
 import chess.ChessGame;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
+import passoff.server.TestServerFacade;
 import server.Server;
 
 import java.lang.reflect.Method;
@@ -10,7 +11,7 @@ import java.sql.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class DatabaseTests {
+public class DBTest {
 
     private static final TestUser TEST_USER = new TestUser("ExistingUser", "existingUserPassword", "eu@mail.com");
 
