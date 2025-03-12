@@ -36,13 +36,10 @@ public class ChessService {
         this.userDAO = userDAO;
     }
 
-    /**
-     * Constructor for in-memory data access.
-     */
-    public ChessService() {
-        UserDAO userStorage = new MemoryUserDAO();
-        GameDAO gameStorage = new MemoryGameDAO();
-        AuthDAO authStorage = new MemoryAuthDAO();
+    public ChessService() throws DataAccessException {
+        UserDAO userStorage = new MySQLUserDAO();
+        GameDAO gameStorage = new MySQLGameDAO();
+        AuthDAO authStorage = new MySQLAuthDAO();
 
         this.userDAO = userStorage;
         this.gameDAO = gameStorage;
@@ -103,9 +100,11 @@ public class ChessService {
         }
 
         UserData user = userDAO.getUser(request.username());
-        boolean credentialsInvalid = user == null || !user.password().equals(request.password());
+        if (user == null) {
+            throw new RuntimeException("Error: unauthorized");
+        }
 
-        if (credentialsInvalid) {
+        if (!userDAO.verifyPassword(request.username(), request.password())) {
             throw new RuntimeException("Error: unauthorized");
         }
 
