@@ -16,9 +16,6 @@ public class MySQLGameDAO implements GameDAO {
    * 
    * @throws DataAccessException if there is an error creating the table
    */
-  private void createTableIfNotExists() throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 
   public MySQLGameDAO() throws DataAccessException {
   }
