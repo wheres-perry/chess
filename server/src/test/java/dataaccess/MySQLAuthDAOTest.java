@@ -15,7 +15,7 @@ class MySQLAuthDAOTest {
         authDAO.clear(); // Start with clean state
     }
 
-    @AfterEach // Cleans up after each test
+    @AfterEach
     void tearDown() throws Exception {
         if (authDAO != null) {
             authDAO.close();
@@ -23,7 +23,7 @@ class MySQLAuthDAOTest {
     }
 
     @Test
-    void createAuth_validUsername_returnsAuthToken() throws DataAccessException {
+    void testCreateAuthValid() throws DataAccessException {
         String username = "chessGod69";
         String authToken = authDAO.createAuth(username);
 
@@ -35,17 +35,17 @@ class MySQLAuthDAOTest {
     }
 
     @Test
-    void createAuth_nullUsername_throwsException() {
+    void testCreateAuthNull() {
         assertThrows(DataAccessException.class, () -> authDAO.createAuth(null));
     }
 
     @Test
-    void createAuth_emptyUsername_throwsException() {
+    void testCreateAuthEmpty() {
         assertThrows(DataAccessException.class, () -> authDAO.createAuth(""));
     }
 
     @Test
-    void getAuth_validToken_returnsCorrectData() throws DataAccessException {
+    void testGetAuthValid() throws DataAccessException {
         String username = "chessGod69";
         String authToken = authDAO.createAuth(username);
 
@@ -57,13 +57,13 @@ class MySQLAuthDAOTest {
     }
 
     @Test
-    void getAuth_invalidToken_returnsNull() throws DataAccessException {
+    void testGetAuthInvalid() throws DataAccessException {
         AuthData data = authDAO.getAuth("nonexistentToken");
         assertNull(data);
     }
 
     @Test
-    void deleteAuth_validToken_removesToken() throws DataAccessException {
+    void testDeleteAuth() throws DataAccessException {
         String username = "chessGod69";
         String authToken = authDAO.createAuth(username);
 
@@ -75,12 +75,12 @@ class MySQLAuthDAOTest {
     }
 
     @Test
-    void deleteAuth_nullToken_throwsException() {
+    void testDeleteAuthNull() {
         assertThrows(DataAccessException.class, () -> authDAO.deleteAuth(null));
     }
 
     @Test
-    void clear_withExistingData_removesAllData() throws DataAccessException {
+    void testClear() throws DataAccessException {
         authDAO.createAuth("Trump");
         authDAO.createAuth("Biden");
 
@@ -91,19 +91,19 @@ class MySQLAuthDAOTest {
     }
 
     @Test
-    void clear_emptyDatabase_completesSuccessfully() throws DataAccessException {
+    void testClearEmpty() throws DataAccessException {
         authDAO.clear(); // Already cleared in setup
 
         assertDoesNotThrow(() -> authDAO.clear());
     }
 
     @Test
-    void close_validConnection_closesSuccessfully() throws Exception {
+    void testClose() throws Exception {
         assertDoesNotThrow(() -> authDAO.close());
     }
 
     @Test
-    void close_multipleCalls_doesNotThrowException() throws Exception {
+    void testCloseMultiple() throws Exception {
         authDAO.close();
         assertDoesNotThrow(() -> authDAO.close());
     }
