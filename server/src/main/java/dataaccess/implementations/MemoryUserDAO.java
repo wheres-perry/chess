@@ -1,5 +1,6 @@
 package dataaccess.implementations;
 
+import org.mindrot.jbcrypt.BCrypt;
 import model.UserData;
 import java.util.HashMap;
 import dataaccess.interfaces.UserDAO;
@@ -30,12 +31,12 @@ public class MemoryUserDAO implements UserDAO {
 
     @Override
     public String hashPassword(String password) {
-        throw new UnsupportedOperationException("Unimplemented method 'hashPassword'");
+        return BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
     @Override
     public boolean checkPassword(String password, String hash) {
-        throw new UnsupportedOperationException("Unimplemented method 'checkPassword'");
+        return BCrypt.checkpw(password, hash);
     }
 
     @Override
