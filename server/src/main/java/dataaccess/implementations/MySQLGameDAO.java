@@ -1,79 +1,174 @@
 package dataaccess.implementations;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.interfaces.GameDAO;
 
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import model.GameData;
 
-/**
- * MySQL implementation of the GameDAO interface.
- */
-public class MySQLGameDAO implements GameDAO {
-
-  /**
-   * Creates the games table if it does not already exist.
-   * 
-   * @throws DataAccessException if there is an error creating the table
-   */
+public class MySQLGameDAO implements GameDAO, AutoCloseable {
+  private final Connection connection;
+  private final Gson gson = new Gson();
 
   public MySQLGameDAO() throws DataAccessException {
+    connection = DatabaseManager.getConnection();
+    createGameTable();
   }
 
-  /**
-   * Creates a new game.
-   * 
-   * @param gameName the name of the game
-   * @return the ID of the newly created game
-   * @throws DataAccessException if there is an error creating the game
-   */
+  private void createGameTable() throws DataAccessException {
+    try {
+      String createTableSQL = """
+          CREATE TABLE IF NOT EXISTS games (
+              game_id INT NOT NULL AUTO_INCREMENT,
+              white_username VARCHAR(255),
+              black_username VARCHAR(255),
+              game_name VARCHAR(255) NOT NULL,
+              game_state TEXT,
+              PRIMARY KEY (game_id)
+          )
+          """;
+
+      try (PreparedStatement stmt = connection.prepareStatement(createTableSQL)) {
+        stmt.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw new DataAccessException("Error creating game table: " + e.getMessage());
+    }
+  }
+
   @Override
   public int createGame(String gameName) throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
+    if (gameName == null || gameName.isEmpty()) {
+      throw new DataAccessException("Game name cannot be empty");
+    }
+
+    try {
+      String sql = "INSERT INTO games (game_name, game_state) VALUES (?, ?)";
+
+      ChessGame game = new ChessGame();
+      String gameState = gson.toJson(game);
+
+      try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        stmt.setString(1, gameName);
+        stmt.setString(2, gameState);
+        stmt.executeUpdate();
+
+        try (ResultSet rs = stmt.getGeneratedKeys()) {
+          if (rs.next()) {
+            return rs.getInt(1);
+          } else {
+            throw new DataAccessException("Failed to get generated game ID");
+          }
+        }
+      }
+    } catch (SQLException e) {
+      throw new DataAccessException("Error creating game: " + e.getMessage());
+    }
   }
 
-  /**
-   * Gets a game by ID.
-   * 
-   * @param gameID the game ID to look up
-   * @return the game data
-   * @throws DataAccessException if there is an error retrieving the game
-   */
   @Override
   public GameData getGame(int gameID) throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
+    try {
+      String sql = "SELECT game_id, white_username, black_username, game_name, game_state FROM games WHERE game_id = ?";
+
+      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        stmt.setInt(1, gameID);
+
+        try (ResultSet rs = stmt.executeQuery()) {
+          if (rs.next()) {
+            ChessGame game = gson.fromJson(rs.getString("game_state"), ChessGame.class);
+
+            return new GameData(
+                rs.getInt("game_id"),
+                rs.getString("white_username"),
+                rs.getString("black_username"),
+                rs.getString("game_name"),
+                game);
+          }
+          return null;
+        }
+      }
+    } catch (SQLException e) {
+      throw new DataAccessException("Error retrieving game: " + e.getMessage());
+    }
   }
 
-  /**
-   * Lists all games.
-   * 
-   * @return a list of all games
-   * @throws DataAccessException if there is an error listing the games
-   */
   @Override
   public Collection<GameData> listGames() throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
+    Collection<GameData> games = new ArrayList<>();
+
+    try {
+      String sql = "SELECT game_id, white_username, black_username, game_name, game_state FROM games";
+
+      try (PreparedStatement stmt = connection.prepareStatement(sql);
+          ResultSet rs = stmt.executeQuery()) {
+
+        while (rs.next()) {
+          ChessGame game = gson.fromJson(rs.getString("game_state"), ChessGame.class);
+
+          games.add(new GameData(
+              rs.getInt("game_id"),
+              rs.getString("white_username"),
+              rs.getString("black_username"),
+              rs.getString("game_name"),
+              game));
+        }
+      }
+      return games;
+    } catch (SQLException e) {
+      throw new DataAccessException("Error listing games: " + e.getMessage());
+    }
   }
 
-  /**
-   * Updates a game's information.
-   * 
-   * @param gameID the ID of the game to update
-   * @param game   the updated game data
-   * @throws DataAccessException if there is an error updating the game
-   */
   @Override
   public void updateGame(int gameID, GameData game) throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
+    if (game == null) {
+      throw new DataAccessException("Game data cannot be null");
+    }
+
+    try {
+      String sql = "UPDATE games SET white_username = ?, black_username = ?, game_name = ?, game_state = ? WHERE game_id = ?";
+
+      String gameState = gson.toJson(game.game());
+
+      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        stmt.setString(1, game.whiteUsername());
+        stmt.setString(2, game.blackUsername());
+        stmt.setString(3, game.gameName());
+        stmt.setString(4, gameState);
+        stmt.setInt(5, gameID);
+
+        int rowsAffected = stmt.executeUpdate();
+        if (rowsAffected == 0) {
+          throw new DataAccessException("Game not found with ID: " + gameID);
+        }
+      }
+    } catch (SQLException e) {
+      throw new DataAccessException("Error updating game: " + e.getMessage());
+    }
   }
 
-  /**
-   * Clears all games.
-   * 
-   * @throws DataAccessException if there is an error clearing the games
-   */
   @Override
   public void clear() throws DataAccessException {
-    throw new UnsupportedOperationException("Not supported yet.");
+    try {
+      String sql = "DELETE FROM games";
+
+      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        stmt.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw new DataAccessException("Error clearing games: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public void close() throws Exception {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
   }
 }
