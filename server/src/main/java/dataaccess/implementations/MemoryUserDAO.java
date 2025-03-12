@@ -30,19 +30,16 @@ public class MemoryUserDAO implements UserDAO {
 
     @Override
     public String hashPassword(String password) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'hashPassword'");
     }
 
     @Override
     public boolean checkPassword(String password, String hash) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'checkPassword'");
     }
 
     @Override
     public boolean verifyPassword(String username, String password) throws DataAccessException {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'verifyPassword'");
     }
 }

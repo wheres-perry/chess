@@ -3,7 +3,7 @@ package server;
 import spark.*;
 import handlers.*;
 import service.ChessService;
-
+import dataaccess.DataAccessException;
 
 public class Server {
 
@@ -12,7 +12,13 @@ public class Server {
 
         Spark.staticFiles.location("web");
 
-        ChessService chessService = new ChessService();
+        ChessService chessService;
+        try {
+            chessService = new ChessService();
+        } catch (DataAccessException e) {
+            System.err.println("Failed to initialize Chess Service: " + e.getMessage());
+            throw new RuntimeException("Server initialization failed due to data access error", e);
+        }
 
         ClearHandler clearHandler = new ClearHandler(chessService);
         RegisterHandler registerHandler = new RegisterHandler(chessService);
