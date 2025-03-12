@@ -41,6 +41,10 @@ public class MemoryUserDAO implements UserDAO {
 
     @Override
     public boolean verifyPassword(String username, String password) throws DataAccessException {
-        throw new UnsupportedOperationException("Unimplemented method 'verifyPassword'");
+        UserData user = getUser(username);
+        if (user == null) {
+            return false;
+        }
+        return checkPassword(password, user.password());
     }
 }
