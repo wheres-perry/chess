@@ -1,17 +1,16 @@
 package client;
 
-import client.websocket.NotificationHandler;
-import webSocketMessages.Notification;
+
 
 import java.util.Scanner;
 
 import static client.EscapeSequences.*;
 
 public class Repl implements NotificationHandler {
-    private final PetClient client;
+    private final ChessClient client;
 
     public Repl(String serverUrl) {
-        client = new PetClient(serverUrl, this);
+        client = new ChessClient(serverUrl, this);
     }
 
     public void run() {

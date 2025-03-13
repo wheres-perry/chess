@@ -10,7 +10,7 @@ import client.websocket.NotificationHandler;
 import server.ServerFacade;
 import client.websocket.WebSocketFacade;
 
-public class PetClient {
+public class ChessClient {
     private String visitorName = null;
     private final ServerFacade server;
     private final String serverUrl;
@@ -18,7 +18,7 @@ public class PetClient {
     private WebSocketFacade ws;
     private State state = State.SIGNEDOUT;
 
-    public PetClient(String serverUrl, NotificationHandler notificationHandler) {
+    public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
         server = new ServerFacade(serverUrl);
         this.serverUrl = serverUrl;
         this.notificationHandler = notificationHandler;
