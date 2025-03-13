@@ -11,6 +11,7 @@ public class MySQLAuthDAO implements AuthDAO, AutoCloseable {
     private final Connection connection;
 
     public MySQLAuthDAO() throws DataAccessException {
+        DatabaseManager.createDatabase(); 
         connection = DatabaseManager.getConnection();
         createAuthTable();
     }

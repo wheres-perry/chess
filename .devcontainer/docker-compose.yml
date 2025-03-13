@@ -8,11 +8,6 @@ services:
     network_mode: service:db
     depends_on:
       - db
-    environment:
-      - MYSQL_HOST=localhost
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=rootpassword
-      - MYSQL_DATABASE=mydatabase
   
   db:
     image: mysql:8.0

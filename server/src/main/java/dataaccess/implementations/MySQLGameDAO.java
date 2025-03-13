@@ -15,6 +15,7 @@ public class MySQLGameDAO implements GameDAO, AutoCloseable {
   private final Gson gson = new Gson();
 
   public MySQLGameDAO() throws DataAccessException {
+    DatabaseManager.createDatabase(); 
     connection = DatabaseManager.getConnection();
     createGameTable();
   }

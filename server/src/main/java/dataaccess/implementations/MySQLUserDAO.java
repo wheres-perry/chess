@@ -11,6 +11,7 @@ public class MySQLUserDAO implements UserDAO, AutoCloseable {
     private final Connection connection;
 
     public MySQLUserDAO() throws DataAccessException {
+        DatabaseManager.createDatabase(); 
         connection = DatabaseManager.getConnection();
         createUserTable();
     }
