@@ -21,6 +21,9 @@ public class MemoryUserDAO implements UserDAO {
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
+        if (user == null) {
+            throw new DataAccessException("User cannot be null");
+        }
         users.put(user.username(), user);
     }
 
