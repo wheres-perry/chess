@@ -21,6 +21,10 @@ public class MemoryAuthDAO implements AuthDAO {
 
     @Override
     public String createAuth(String username) throws DataAccessException {
+        if (username == null || username.isEmpty()) {
+            throw new DataAccessException("Username cannot be null or empty");
+        }
+
         String authToken = UUID.randomUUID().toString();
         authTokens.put(authToken, new AuthData(authToken, username));
         return authToken;
