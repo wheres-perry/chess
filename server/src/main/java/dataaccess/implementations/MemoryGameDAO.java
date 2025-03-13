@@ -24,6 +24,9 @@ public class MemoryGameDAO implements GameDAO {
 
     @Override
     public int createGame(String gameName) throws DataAccessException {
+        if (gameName == null || gameName.isEmpty()) {
+            throw new DataAccessException("Game name cannot be null or empty");
+        }
         int gameID = nextID++;
         games.put(gameID, new GameData(gameID, null, null, gameName, new ChessGame()));
         return gameID;
@@ -41,6 +44,9 @@ public class MemoryGameDAO implements GameDAO {
 
     @Override
     public void updateGame(int gameID, GameData game) throws DataAccessException {
+        if (!games.containsKey(gameID)) {
+            throw new DataAccessException("Game with ID " + gameID + " does not exist");
+        }
         games.put(gameID, game);
     }
 }
