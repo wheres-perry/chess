@@ -1,7 +1,8 @@
 package ui;
 
 /**
- * This class contains constants and functions relating to ANSI Escape Sequences that are useful in the Client display
+ * This class contains constants and functions relating to ANSI Escape Sequences
+ * that are useful in the Client display
  */
 public class EscapeSequences {
 
@@ -61,5 +62,10 @@ public class EscapeSequences {
     public static final String BLACK_PAWN = " ♟ ";
     public static final String EMPTY = " \u2003 ";
 
-    public static String moveCursorToLocation(int x, int y) { return UNICODE_ESCAPE + "[" + y + ";" + x + "H"; }
+    private static final String ESCAPE = "\u001b[";
+    public static final String RESET = ESCAPE + "0m";
+
+    public static String moveCursorToLocation(int x, int y) {
+        return UNICODE_ESCAPE + "[" + y + ";" + x + "H";
+    }
 }

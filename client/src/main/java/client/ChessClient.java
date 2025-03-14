@@ -10,6 +10,8 @@ import client.websocket.NotificationHandler;
 import server.ServerFacade;
 import client.websocket.WebSocketFacade;
 
+
+// Class meant to actually evaluate the commands given by the user
 public class ChessClient {
     private String visitorName = null;
     private final ServerFacade server;
