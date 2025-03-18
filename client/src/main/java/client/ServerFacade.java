@@ -1,5 +1,13 @@
 package client;
 
+import com.google.gson.Gson;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
 import java.util.Map;
 
 /**
@@ -7,6 +15,7 @@ import java.util.Map;
  */
 public class ServerFacade {
     private final String serverUrl;
+    private static final Gson gson = new Gson();
 
     /**
      * Creates a new ServerFacade.
@@ -23,7 +32,8 @@ public class ServerFacade {
      * @throws Exception if an error occurs during the operation
      */
     public void clear() throws Exception {
-        // Stub implementation
+        HttpURLConnection http = sendRequest("DELETE", "/db", null, null);
+        handleResponse(http);
     }
 
     /**
@@ -102,5 +112,55 @@ public class ServerFacade {
             throws Exception {
         // Stub implementation
         return null;
+    }
+
+    private HttpURLConnection sendRequest(String method, String path, String authToken,
+            Object request) throws Exception {
+        URL url = new URI(serverUrl + path).toURL();
+        HttpURLConnection http = (HttpURLConnection) url.openConnection();
+        http.setRequestMethod(method);
+
+        if (authToken != null) {
+            http.setRequestProperty("Authorization", authToken);
+        }
+
+        if (request != null) {
+            http.setDoOutput(true);
+            http.addRequestProperty("Content-Type", "application/json");
+            String reqBody = gson.toJson(request);
+            try (OutputStream reqStream = http.getOutputStream()) {
+                reqStream.write(reqBody.getBytes());
+            }
+        }
+
+        http.connect();
+        return http;
+    }
+
+
+    private Map<String, Object> handleResponse(HttpURLConnection http) throws Exception {
+        if (http.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            try (InputStream respBody = http.getInputStream()) {
+                String respData = streamToString(respBody);
+                return gson.fromJson(respData, Map.class);
+            }
+        } else {
+            try (InputStream errorStream = http.getErrorStream()) {
+                String errorData = errorStream != null ? streamToString(errorStream)
+                        : "Error: " + http.getResponseCode() + " " + http.getResponseMessage();
+                throw new Exception(errorData);
+            }
+        }
+    }
+
+    private String streamToString(InputStream inputStream) throws IOException {
+        StringBuilder textBuilder = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            int c;
+            while ((c = reader.read()) != -1) {
+                textBuilder.append((char) c);
+            }
+        }
+        return textBuilder.toString();
     }
 }
