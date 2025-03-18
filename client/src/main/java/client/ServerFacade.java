@@ -8,8 +8,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import java.util.Map;
-
 /**
  * Facade for the Chess server API. Handles all server communication.
  */
@@ -114,6 +112,16 @@ public class ServerFacade {
         return null;
     }
 
+    /**
+     * Sends an HTTP request to the server.
+     * 
+     * @param method The HTTP method (GET, POST, PUT, DELETE)
+     * @param path The API endpoint path
+     * @param authToken The authentication token, or null if not needed
+     * @param request The request body object, or null if no body is needed
+     * @return The HttpURLConnection object representing the connection
+     * @throws Exception if an error occurs during the operation
+     */
     private HttpURLConnection sendRequest(String method, String path, String authToken,
             Object request) throws Exception {
         URL url = new URI(serverUrl + path).toURL();
@@ -137,7 +145,13 @@ public class ServerFacade {
         return http;
     }
 
-
+    /**
+     * Handles the HTTP response from the server.
+     * 
+     * @param http The HttpURLConnection object representing the connection
+     * @return Response data as a Map, if successful
+     * @throws Exception if the request was unsuccessful or an error occurs
+     */
     private Map<String, Object> handleResponse(HttpURLConnection http) throws Exception {
         if (http.getResponseCode() == HttpURLConnection.HTTP_OK) {
             try (InputStream respBody = http.getInputStream()) {
@@ -153,6 +167,13 @@ public class ServerFacade {
         }
     }
 
+    /**
+     * Converts an InputStream to a String.
+     * 
+     * @param inputStream The input stream to convert
+     * @return The stream contents as a String
+     * @throws IOException if an I/O error occurs
+     */
     private String streamToString(InputStream inputStream) throws IOException {
         StringBuilder textBuilder = new StringBuilder();
         try (Reader reader = new BufferedReader(new InputStreamReader(inputStream))) {
