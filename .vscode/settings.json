@@ -1,3 +1,15 @@
 {
-    "java.compile.nullAnalysis.mode": "automatic"
+    // Keep format on save enabled
+    "editor.formatOnSave": true,
+    // Settings specific to Java files
+    "[java]": {
+        // Keep using the Red Hat extension for formatting
+        "editor.defaultFormatter": "redhat.java",
+        // Tell VS Code to use 2 spaces for tabs in Java files
+        "editor.tabSize": 2,
+        // Ensure tabs are converted to spaces (standard practice in Java)
+        "editor.insertSpaces": true
+    },
+    "java.format.settings.profile": "Google",
+    // Make sure this line is removed or commented out:
 }
