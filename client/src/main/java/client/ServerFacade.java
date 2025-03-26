@@ -164,7 +164,7 @@ public class ServerFacade {
     /**
      * Handles the HTTP response from the server. Checks status code and parses
      * body. Returns an
-     * empty map for successful responses with no body.
+     * empty map for successful responses with no body. 
      *
      * @param http The HttpURLConnection object representing the connection
      * @return Response data as a Map, if successful and body exists, or empty map
