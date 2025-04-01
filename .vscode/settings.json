@@ -11,5 +11,6 @@
         "editor.insertSpaces": true
     },
     "java.format.settings.profile": "Google",
+    "java.compile.nullAnalysis.mode": "automatic",
     // Make sure this line is removed or commented out:
 }

@@ -1,4 +1,6 @@
-import client.Repl;
+import ui.InGameRepl;
+import ui.PreLoginRepl;
+import ui.PostLoginRepl;
 
 public class ClientMain {
     public static void main(String[] args) {
@@ -7,7 +9,7 @@ public class ClientMain {
             serverUrl = args[0];
         }
 
-        new Repl(serverUrl).run();
+        // new PreLoginRepl(serverUrl).run();
     }
 
 }
