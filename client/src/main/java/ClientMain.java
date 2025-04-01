@@ -1,6 +1,4 @@
-import ui.InGameRepl;
-import ui.PreLoginRepl;
-import ui.PostLoginRepl;
+import client.ChessClient; // Make sure ChessClient is imported
 
 public class ClientMain {
     public static void main(String[] args) {
@@ -9,7 +7,8 @@ public class ClientMain {
             serverUrl = args[0];
         }
 
-        // new PreLoginRepl(serverUrl).run();
-    }
+        ChessClient client = new ChessClient(serverUrl);
 
+        client.run();
+    }
 }
