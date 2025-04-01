@@ -1,149 +1,102 @@
 package client;
 
-import java.util.Arrays;
+import ui.PreLoginRepl;
+import ui.PostLoginRepl;
 
-import com.google.gson.Gson;
-import model.Pet;
-import model.PetType;
-import exception.ResponseException;
-import client.websocket.NotificationHandler;
-import server.ServerFacade;
-import client.websocket.WebSocketFacade;
+import java.util.List;
+import java.util.HashMap;
 
+import ui.InGameRepl;
 
-// Class meant to actually evaluate the commands given by the user
 public class ChessClient {
-    private String visitorName = null;
     private final ServerFacade server;
-    private final String serverUrl;
-    private final NotificationHandler notificationHandler;
-    private WebSocketFacade ws;
-    private State state = State.SIGNEDOUT;
+    private String authToken;
+    private String currentUser;
 
-    public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
-        server = new ServerFacade(serverUrl);
-        this.serverUrl = serverUrl;
-        this.notificationHandler = notificationHandler;
+    private final PreLoginRepl preLoginRepl;
+    private final PostLoginRepl postLoginRepl;
+    private final InGameRepl inGameRepl;
+
+    public ChessClient(String serverUrl) {
+        this.server = new ServerFacade(serverUrl);
+        this.preLoginRepl = new PreLoginRepl(this);
+        this.postLoginRepl = new PostLoginRepl(this);
+        this.inGameRepl = new InGameRepl(this);
     }
 
-    public String eval(String input) {
-        try {
-            var tokens = input.toLowerCase().split(" ");
-            var cmd = (tokens.length > 0) ? tokens[0] : "help";
-            var params = Arrays.copyOfRange(tokens, 1, tokens.length);
-            return switch (cmd) {
-                case "signin" -> signIn(params);
-                case "rescue" -> rescuePet(params);
-                case "list" -> listPets();
-                case "signout" -> signOut();
-                case "adopt" -> adoptPet(params);
-                case "adoptall" -> adoptAllPets();
-                case "quit" -> "quit";
-                default -> help();
-            };
-        } catch (ResponseException ex) {
-            return ex.getMessage();
-        }
-    }
-
-    public String signIn(String... params) throws ResponseException {
-        if (params.length >= 1) {
-            state = State.SIGNEDIN;
-            visitorName = String.join("-", params);
-            ws = new WebSocketFacade(serverUrl, notificationHandler);
-            ws.enterPetShop(visitorName);
-            return String.format("You signed in as %s.", visitorName);
-        }
-        throw new ResponseException(400, "Expected: <yourname>");
-    }
-
-    public String rescuePet(String... params) throws ResponseException {
-        assertSignedIn();
-        if (params.length >= 2) {
-            var name = params[0];
-            var type = PetType.valueOf(params[1].toUpperCase());
-            var pet = new Pet(0, name, type);
-            pet = server.addPet(pet);
-            return String.format("You rescued %s. Assigned ID: %d", pet.name(), pet.id());
-        }
-        throw new ResponseException(400, "Expected: <name> <CAT|DOG|FROG>");
-    }
-
-    public String listPets() throws ResponseException {
-        assertSignedIn();
-        var pets = server.listPets();
-        var result = new StringBuilder();
-        var gson = new Gson();
-        for (var pet : pets) {
-            result.append(gson.toJson(pet)).append('\n');
-        }
-        return result.toString();
-    }
-
-    public String adoptPet(String... params) throws ResponseException {
-        assertSignedIn();
-        if (params.length == 1) {
+    public void run() {
+        System.out.println("Welcome to the Chess Game!");
+        while (true) {
             try {
-                var id = Integer.parseInt(params[0]);
-                var pet = getPet(id);
-                if (pet != null) {
-                    server.deletePet(id);
-                    return String.format("%s says %s", pet.name(), pet.sound());
+                if (authToken == null) {
+                    if (preLoginRepl.run()) {
+                        break;
+                    }
+                } else if (inGameRepl.isInGame()) {
+                    if (inGameRepl.run()) {
+                        break;
+                    }
+                } else {
+                    if (postLoginRepl.run()) {
+                        break;
+                    }
                 }
-            } catch (NumberFormatException ignored) {
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
             }
         }
-        throw new ResponseException(400, "Expected: <pet id>");
+        System.out.println("Thanks for playing!");
     }
 
-    public String adoptAllPets() throws ResponseException {
-        assertSignedIn();
-        var buffer = new StringBuilder();
-        for (var pet : server.listPets()) {
-            buffer.append(String.format("%s says %s%n", pet.name(), pet.sound()));
+    public void register(String username, String password, String email) throws Exception {
+        HashMap<String, Object> response = server.register(username, password, email);
+        authToken = (String) response.get("authToken");
+        currentUser = username;
+    }
+
+    public void login(String username, String password) throws Exception {
+        HashMap<String, Object> response = server.login(username, password);
+        authToken = (String) response.get("authToken");
+        currentUser = username;
+    }
+
+    public void logout() throws Exception {
+        server.logout(authToken);
+        authToken = null;
+        currentUser = null;
+    }
+
+    public void createGame(String gameName) throws Exception {
+        HashMap<String, Object> response = server.createGame(authToken, gameName);
+        System.out.println("Game created with ID: " + response.get("gameID"));
+    }
+
+    public void listGames() throws Exception {
+        HashMap<String, Object> response = server.listGames(authToken);
+        // Assuming the response contains a "games" key with a list of game objects
+        System.out.println("Available games:");
+        for (HashMap<String, Object> game : (List<HashMap<String, Object>>) response.get("games")) {
+            System.out.println("  ID: " + game.get("gameID") + ", Name: " + game.get("gameName"));
         }
-
-        server.deleteAllPets();
-        return buffer.toString();
     }
 
-    public String signOut() throws ResponseException {
-        assertSignedIn();
-        ws.leavePetShop(visitorName);
-        ws = null;
-        state = State.SIGNEDOUT;
-        return String.format("%s left the shop", visitorName);
+    public void joinGame(int gameID, String color) throws Exception {
+        server.joinGame(authToken, gameID, color);
+        System.out.println("Successfully joined game " + gameID + " as " + color);
+        inGameRepl.setInGame(true);
     }
 
-    private Pet getPet(int id) throws ResponseException {
-        for (var pet : server.listPets()) {
-            if (pet.id() == id) {
-                return pet;
-            }
-        }
-        return null;
+    public void observeGame(int gameID) throws Exception {
+        server.joinGame(authToken, gameID, null); // null color means observe
+        System.out.println("Now observing game " + gameID);
+        inGameRepl.setInGame(true);
     }
 
-    public String help() {
-        if (state == State.SIGNEDOUT) {
-            return """
-                    - signIn <yourname>
-                    - quit
-                    """;
-        }
-        return """
-                - list
-                - adopt <pet id>
-                - rescue <name> <CAT|DOG|FROG|FISH>
-                - adoptAll
-                - signOut
-                - quit
-                """;
+    public String getCurrentUser() {
+        return currentUser;
     }
 
-    private void assertSignedIn() throws ResponseException {
-        if (state == State.SIGNEDOUT) {
-            throw new ResponseException(400, "You must sign in");
-        }
+    public boolean isLoggedIn() {
+        return authToken != null;
     }
 }

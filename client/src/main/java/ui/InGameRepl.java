@@ -1,7 +1,5 @@
 package ui;
 
-package client.repl;
-
 import client.ChessClient;
 import java.util.Scanner;
 

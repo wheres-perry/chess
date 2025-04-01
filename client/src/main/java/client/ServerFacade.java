@@ -1,12 +1,13 @@
 package client;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Type;
 
 /**
  * Facade for the Chess server API. Handles all server communication.
@@ -14,6 +15,8 @@ import java.util.Map;
 public class ServerFacade {
     private final String serverUrl;
     private static final Gson gson = new Gson();
+    private static final Type mapType = new TypeToken<HashMap<String, Object>>() {
+    }.getType();
 
     /**
      * Creates a new ServerFacade.
@@ -43,9 +46,9 @@ public class ServerFacade {
      * @return Response data from the server (likely includes authToken)
      * @throws Exception if an error occurs during the operation
      */
-    public Map<String, Object> register(String username, String password, String email)
+    public HashMap<String, Object> register(String username, String password, String email)
             throws Exception {
-        Map<String, String> requestBody = new HashMap<>();
+        HashMap<String, String> requestBody = new HashMap<>();
         requestBody.put("username", username);
         requestBody.put("password", password);
         requestBody.put("email", email);
@@ -61,8 +64,8 @@ public class ServerFacade {
      * @return Response data from the server (likely includes authToken)
      * @throws Exception if an error occurs during the operation
      */
-    public Map<String, Object> login(String username, String password) throws Exception {
-        Map<String, String> requestBody = new HashMap<>();
+    public HashMap<String, Object> login(String username, String password) throws Exception {
+        HashMap<String, String> requestBody = new HashMap<>();
         requestBody.put("username", username);
         requestBody.put("password", password);
         HttpURLConnection http = sendRequest("POST", "/session", null, requestBody);
@@ -87,7 +90,7 @@ public class ServerFacade {
      * @return Response data from the server (list of games)
      * @throws Exception if an error occurs during the operation
      */
-    public Map<String, Object> listGames(String authToken) throws Exception {
+    public HashMap<String, Object> listGames(String authToken) throws Exception {
         HttpURLConnection http = sendRequest("GET", "/game", authToken, null);
         return handleResponse(http);
     }
@@ -97,11 +100,11 @@ public class ServerFacade {
      *
      * @param authToken The authentication token
      * @param gameName  The name of the game
-     * @return Response data from the server (likely includes gameID)
+     * @return Response data from the server 
      * @throws Exception if an error occurs during the operation
      */
-    public Map<String, Object> createGame(String authToken, String gameName) throws Exception {
-        Map<String, String> requestBody = new HashMap<>();
+    public HashMap<String, Object> createGame(String authToken, String gameName) throws Exception {
+        HashMap<String, String> requestBody = new HashMap<>();
         requestBody.put("gameName", gameName);
         HttpURLConnection http = sendRequest("POST", "/game", authToken, requestBody);
         return handleResponse(http);
@@ -113,16 +116,16 @@ public class ServerFacade {
      * @param authToken   The authentication token
      * @param gameID      The ID of the game to join
      * @param playerColor The color the player wants to play as (WHITE/BLACK), or
-     *                    null/empty to
-     *                    observe
+     *                    null/empty to observe
      * @return Response data from the server (empty on success for join/observe)
      * @throws Exception if an error occurs during the operation
      */
-    public Map<String, Object> joinGame(String authToken, int gameID, String playerColor)
+    public HashMap<String, Object> joinGame(String authToken, int gameID, String playerColor)
             throws Exception {
-        Map<String, Object> requestBody = new HashMap<>();
+        HashMap<String, Object> requestBody = new HashMap<>();
+        requestBody.put("gameID", gameID);
         if (playerColor != null && !playerColor.isEmpty()) {
-            requestBody.put("playerColor", playerColor.toUpperCase()); // Ensure consistent casing
+            requestBody.put("playerColor", playerColor.toUpperCase());
         }
         HttpURLConnection http = sendRequest("PUT", "/game", authToken, requestBody);
         return handleResponse(http);
@@ -164,23 +167,22 @@ public class ServerFacade {
     /**
      * Handles the HTTP response from the server. Checks status code and parses
      * body. Returns an
-     * empty map for successful responses with no body. 
+     * empty map for successful responses with no body.
      *
      * @param http The HttpURLConnection object representing the connection
      * @return Response data as a Map, if successful and body exists, or empty map
      *         otherwise.
      * @throws Exception containing error message if the request was unsuccessful
      */
-    private Map<String, Object> handleResponse(HttpURLConnection http) throws Exception {
+    private HashMap<String, Object> handleResponse(HttpURLConnection http) throws Exception {
         int responseCode = http.getResponseCode();
         if (responseCode >= 200 && responseCode < 300) {
             if (http.getContentLength() == 0) {
-                // Successful request, no content to return
-                return new HashMap<>(); // Return empty map for success without body
+                return new HashMap<>();
             } else {
                 try (InputStream respBody = http.getInputStream()) {
                     String respData = streamToString(respBody);
-                    Map<String, Object> result = gson.fromJson(respData, type);
+                    HashMap<String, Object> result = gson.fromJson(respData, mapType);
 
                     if (result != null) {
                         return result;
@@ -196,7 +198,7 @@ public class ServerFacade {
                     String errorBody = streamToString(errorStream);
                     // Attempt to parse error message from server if JSON
                     try {
-                        Map<String, Object> errorJson = gson.fromJson(errorBody, );
+                        HashMap<String, Object> errorJson = gson.fromJson(errorBody, mapType);
                         if (errorJson != null && errorJson.containsKey("error")) {
                             errorData = (String) errorJson.get("error");
                         }
@@ -204,7 +206,7 @@ public class ServerFacade {
                         errorData = errorBody;
                     }
                 }
-                throw new Exception(errorData); 
+                throw new Exception(errorData);
             }
         }
     }
@@ -218,7 +220,7 @@ public class ServerFacade {
      */
     private String streamToString(InputStream inputStream) throws IOException {
         if (inputStream == null) {
-            return ""; // Handle null stream gracefully
+            return "";
         }
         StringBuilder textBuilder = new StringBuilder();
         try (Reader reader = new BufferedReader(
