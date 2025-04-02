@@ -28,8 +28,11 @@ public class PostLoginRepl {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Logged in. Type 'help' for options.");
         // Loop condition uses the new client method to check game state
         while (client.isLoggedIn() && !client.isClientInGame()) {
-            System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR + "["
-                    + client.getCurrentUser() + "] >>> " + EscapeSequences.SET_TEXT_COLOR_GREEN);
+            System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR
+                    + EscapeSequences.SET_TEXT_COLOR_WHITE + "LOBBY "
+                    + EscapeSequences.SET_TEXT_COLOR_DARK_GREY
+                    + EscapeSequences.SET_TEXT_BLINKING + "> "
+                    + EscapeSequences.SET_TEXT_COLOR_GREEN);
             String line = scanner.nextLine().trim();
             System.out.print(EscapeSequences.RESET_TEXT_COLOR);
             String[] args = line.split("\\s+");

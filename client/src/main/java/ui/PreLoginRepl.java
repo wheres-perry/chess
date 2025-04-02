@@ -24,9 +24,13 @@ public class PreLoginRepl {
    * @return true if the user wants to quit the application, false otherwise.
    */
   public boolean run() {
-    System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Welcome! Type 'help' for options.");
+    System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Welcome! Type " + EscapeSequences.SET_BG_COLOR_BLUE
+        + "'help'" + EscapeSequences.RESET_BG_COLOR + " for options.");
     while (!client.isLoggedIn()) {
-      System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR + "[LOGGED_OUT] >>> "
+      System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR
+          + EscapeSequences.SET_TEXT_COLOR_WHITE + "LOGIN "
+          + EscapeSequences.SET_TEXT_COLOR_DARK_GREY
+          + EscapeSequences.SET_TEXT_BLINKING + "> "
           + EscapeSequences.SET_TEXT_COLOR_GREEN);
       String line = scanner.nextLine().trim();
       System.out.print(EscapeSequences.RESET_TEXT_COLOR); // Reset color after input
@@ -69,11 +73,11 @@ public class PreLoginRepl {
   private void displayHelp() {
     System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Available commands:");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  help" + EscapeSequences.SET_TEXT_COLOR_WHITE
-        + "                 - Show this help message");
+        + "                                   - Show this help message");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  quit" + EscapeSequences.SET_TEXT_COLOR_WHITE
-        + "                 - Exit the program");
+        + "                                   - Exit the program");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  login <USERNAME> <PASSWORD>"
-        + EscapeSequences.SET_TEXT_COLOR_WHITE + " - Log in to an existing account");
+        + EscapeSequences.SET_TEXT_COLOR_WHITE + "            - Log in to an existing account");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  register <USERNAME> <PASSWORD> <EMAIL>"
         + EscapeSequences.SET_TEXT_COLOR_WHITE + " - Create a new account");
     System.out.print(EscapeSequences.RESET_TEXT_COLOR);
