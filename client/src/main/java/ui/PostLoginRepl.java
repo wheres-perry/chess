@@ -3,28 +3,31 @@ package ui;
 import client.ChessClient;
 import java.util.Scanner;
 import java.util.Arrays;
-// TODO: Import necessary classes for game list storage if done here
+import java.util.List; // Imported List
+import java.util.HashMap; // Imported HashMap
+import java.util.ArrayList; // Imported ArrayList
 
 public class PostLoginRepl {
     private final ChessClient client;
     private final Scanner scanner;
-    // TODO: Add a field to store the last fetched game list for mapping numbers to
-    // IDs
-    // private List<HashMap<String, Object>> currentGameList;
+    // Field added to store the last fetched game list
+    private List<HashMap<String, Object>> currentGameList;
 
     public PostLoginRepl(ChessClient client) {
         this.client = client;
         this.scanner = new Scanner(System.in);
+        this.currentGameList = new ArrayList<>(); // Initialize the list
     }
 
     /**
      * Runs the post-login command loop.
-     * 
+     *
      * @return true if the user wants to quit the application, false otherwise.
      */
     public boolean run() {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Logged in. Type 'help' for options.");
-        while (client.isLoggedIn() && !isCurrentlyInGame()) { // Check if still logged in and not in a game
+        // Loop condition uses the new client method to check game state
+        while (client.isLoggedIn() && !client.isClientInGame()) {
             System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR + "["
                     + client.getCurrentUser() + "] >>> " + EscapeSequences.SET_TEXT_COLOR_GREEN);
             String line = scanner.nextLine().trim();
@@ -34,6 +37,9 @@ public class PostLoginRepl {
                 continue;
             String command = args[0].toLowerCase();
 
+            // Use try-with-resources or explicit handling for Scanner if needed elsewhere
+            // For this REPL loop, leaving scanner open is typical.
+
             try {
                 switch (command) {
                     case "help":
@@ -41,40 +47,43 @@ public class PostLoginRepl {
                         break;
                     case "logout":
                         handleLogout();
-                        // Loop condition client.isLoggedIn() will become false, breaking loop
+                        // Loop condition client.isLoggedIn() will become false
                         break;
-                    case "create": // Assuming "create game"
+                    case "create":
                         handleCreateGame(Arrays.copyOfRange(args, 1, args.length));
                         break;
-                    case "list": // Assuming "list games"
-                        handleListGames();
+                    case "list":
+                        handleListGames(); // This now stores the list
                         break;
-                    case "join": // Assuming "play game"
+                    case "join":
                         handleJoinGame(Arrays.copyOfRange(args, 1, args.length));
-                        // If join successful, isCurrentlyInGame() should become true, breaking loop
+                        // Loop condition !client.isClientInGame() will become false if join succeeds
                         break;
-                    case "observe": // Assuming "observe game"
+                    case "observe":
                         handleObserveGame(Arrays.copyOfRange(args, 1, args.length));
-                        // If observe successful, isCurrentlyInGame() should become true, breaking loop
+                        // Loop condition !client.isClientInGame() will become false if observe succeeds
                         break;
-                    case "quit": // Allow quit from post-login as well
-                        return true;
+                    case "quit":
+                        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Exiting application."
+                                + EscapeSequences.RESET_TEXT_COLOR);
+                        return true; // Signal exit
                     default:
-                        System.out.println(EscapeSequences.SET_TEXT_COLOR_RED
-                                + "Unknown command. Type 'help' for options." + EscapeSequences.RESET_TEXT_COLOR);
+                        printError("Unknown command. Type 'help' for options.");
                 }
             } catch (Exception e) {
-                System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: " + e.getMessage()
-                        + EscapeSequences.RESET_TEXT_COLOR);
+                // General error handling for commands
+                printError("Command failed: " + e.getMessage());
             }
         }
-        return !client.isLoggedIn(); // Return true only if user logged out and intends to quit
+        // Return true if the loop exited because the user logged out (and didn't quit
+        // directly)
+        // Return false if the loop exited because the user entered a game
+        // (isClientInGame() became true)
+        return !client.isLoggedIn();
     }
 
-    // Helper to check if the client transitioned to in-game state
-    private boolean isCurrentlyInGame() {
-        return false; // Placeholder
-    }
+    // Helper is removed as the check is now done via client.isClientInGame() in the
+    // loop condition
 
     private void displayHelp() {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Available commands:");
@@ -82,88 +91,157 @@ public class PostLoginRepl {
                 + "          - Show this help message");
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  logout" + EscapeSequences.SET_TEXT_COLOR_WHITE
                 + "        - Log out");
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  create <NAME>"
-                + EscapeSequences.SET_TEXT_COLOR_WHITE + " - Create a new game");
+        System.out.println(
+                EscapeSequences.SET_TEXT_COLOR_YELLOW + "  create <NAME>" + EscapeSequences.SET_TEXT_COLOR_WHITE
+                        + " - Create a new game");
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  list" + EscapeSequences.SET_TEXT_COLOR_WHITE
                 + "          - List all available games");
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  join <ID> [WHITE|BLACK]"
-                + EscapeSequences.SET_TEXT_COLOR_WHITE + " - Join a game as a player (specify color)");
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  observe <ID>"
-                + EscapeSequences.SET_TEXT_COLOR_WHITE + "  - Observe a game");
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  join <#> [WHITE|BLACK|<empty>]"
+                + EscapeSequences.SET_TEXT_COLOR_WHITE
+                + " - Join game number # as player (WHITE/BLACK) or observer (empty color)");
+        System.out
+                .println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  observe <#>" + EscapeSequences.SET_TEXT_COLOR_WHITE
+                        + "  - Observe game number #");
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  quit" + EscapeSequences.SET_TEXT_COLOR_WHITE
                 + "          - Exit the program");
         System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    private void handleLogout() throws Exception {
-        client.logout();
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logged out." + EscapeSequences.RESET_TEXT_COLOR);
-    }
-
-    private void handleCreateGame(String[] args) throws Exception {
-        if (args.length < 1) {
-            throw new Exception("Usage: create <NAME>");
+    private void handleLogout() {
+        try {
+            client.logout();
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logged out successfully."
+                    + EscapeSequences.RESET_TEXT_COLOR);
+        } catch (Exception e) {
+            printError("Logout failed: " + e.getMessage());
         }
-        String gameName = String.join(" ", args); // Allow spaces in game name
-        client.createGame(gameName);
-        // Success message printed by ChessClient (or could be moved here)
     }
 
-    private void handleListGames() throws Exception {
-        // TODO: Store the fetched list here (`currentGameList`) to map numbers to IDs
-        // later.
-        client.listGames();
+    private void handleCreateGame(String[] args) {
+        if (args.length < 1) {
+            printError("Usage: create <NAME>");
+            return;
+        }
+        String gameName = String.join(" ", args);
+        try {
+            client.createGame(gameName);
+            // Success message is now printed by ChessClient upon successful creation
+        } catch (Exception e) {
+            printError("Failed to create game: " + e.getMessage());
+        }
     }
 
-    private void handleJoinGame(String[] args) throws Exception {
+    private void handleListGames() {
+        try {
+            // Store the fetched list
+            this.currentGameList = client.listGames();
+
+            // Print the list with 1-based numbering
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Available games:");
+            if (currentGameList == null || currentGameList.isEmpty()) {
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  No games available."
+                        + EscapeSequences.RESET_TEXT_COLOR);
+            } else {
+                for (int i = 0; i < currentGameList.size(); i++) {
+                    HashMap<String, Object> game = currentGameList.get(i);
+                    // Safely get properties, handle potential missing keys or wrong types
+                    String name = game.getOrDefault("gameName", "Unnamed Game").toString();
+                    Object idObj = game.get("gameID"); // ID might be Double due to JSON parsing
+                    String idStr = (idObj != null) ? String.format("%.0f", Double.parseDouble(idObj.toString()))
+                            : "N/A";
+                    String whiteUser = game.getOrDefault("whiteUsername", "<available>").toString();
+                    String blackUser = game.getOrDefault("blackUsername", "<available>").toString();
+
+                    System.out.printf(
+                            EscapeSequences.SET_TEXT_COLOR_YELLOW + "  %d: " + EscapeSequences.SET_TEXT_COLOR_WHITE
+                                    + "%s (ID: %s) - White: %s, Black: %s%n",
+                            i + 1, name, idStr, whiteUser, blackUser);
+                }
+                System.out.print(EscapeSequences.RESET_TEXT_COLOR);
+            }
+        } catch (Exception e) {
+            printError("Failed to list games: " + e.getMessage());
+            this.currentGameList = new ArrayList<>(); // Reset list on error
+        }
+    }
+
+    // Handles both joining as player and joining as observer
+    private void handleJoinGame(String[] args) {
         if (args.length < 1 || args.length > 2) {
-            throw new Exception("Usage: join <ID> [WHITE|BLACK]");
+            printError("Usage: join <GameNumber> [WHITE|BLACK|<leave empty to observe>]");
+            return;
         }
         int gameNumber;
         try {
             gameNumber = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
-            throw new Exception("Invalid game ID number: " + args[0]);
+            printError("Invalid game number: " + args[0]);
+            return;
         }
 
-        // TODO: Map gameNumber (1, 2, ...) back to the actual gameID using
-        // `currentGameList`
-        int actualGameID = mapGameNumberToID(gameNumber); // Need to implement this mapping
-
-        String color = null;
+        String playerColor = null; // Default to observer
         if (args.length == 2) {
-            color = args[1].toUpperCase();
-            if (!color.equals("WHITE") && !color.equals("BLACK")) {
-                throw new Exception("Invalid color. Choose WHITE or BLACK.");
+            playerColor = args[1].toUpperCase();
+            if (!playerColor.equals("WHITE") && !playerColor.equals("BLACK")) {
+                printError("Invalid color specified. Use WHITE or BLACK, or leave empty to observe.");
+                return;
             }
         }
 
-        client.joinGame(actualGameID, color);
-        // Success message and board drawing handled by ChessClient/InGameRepl
-    }
-
-    private void handleObserveGame(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new Exception("Usage: observe <ID>");
-        }
-        int gameNumber;
         try {
-            gameNumber = Integer.parseInt(args[0]);
+            int actualGameID = mapGameNumberToID(gameNumber); // Get the real ID
+            // Call the appropriate client method based on color
+            if (playerColor != null) {
+                client.joinGame(actualGameID, playerColor);
+            } else {
+                client.observeGame(actualGameID); // Observing is joining with null color
+            }
+            // Success messages and state change (inGameRepl.setInGame(true)) are handled by
+            // ChessClient
+            // The loop condition will detect the state change on the next iteration
         } catch (NumberFormatException e) {
-            throw new Exception("Invalid game ID number: " + args[0]);
+            printError("Invalid game ID format in stored list for game number " + gameNumber);
+        } catch (Exception e) {
+            printError("Failed to join/observe game: " + e.getMessage());
         }
-
-        // TODO: Map gameNumber (1, 2, ...) back to the actual gameID using
-        // `currentGameList`
-        int actualGameID = mapGameNumberToID(gameNumber); // Need to implement this mapping
-
-        client.observeGame(actualGameID);
-        // Success message and board drawing handled by ChessClient/InGameRepl
     }
 
-    // TODO: Implement this method using the stored game list
+    // Observe is now handled by 'join' with no color specified.
+    // This method can be kept for explicit observe command if desired.
+    private void handleObserveGame(String[] args) {
+        if (args.length != 1) {
+            printError("Usage: observe <GameNumber>");
+            return;
+        }
+        // Reuse the join logic with null color
+        handleJoinGame(new String[] { args[0] }); // Pass game number, color will be null
+    }
+
+    // Implemented mapping using the stored game list
     private int mapGameNumberToID(int gameNumber) throws Exception {
-        System.out.println("stub");
-        return gameNumber;
+        if (currentGameList == null || currentGameList.isEmpty()) {
+            throw new Exception("No game list available. Use 'list' command first.");
+        }
+        if (gameNumber < 1 || gameNumber > currentGameList.size()) {
+            throw new Exception(
+                    "Invalid game number: " + gameNumber + ". Must be between 1 and " + currentGameList.size());
+        }
+        // Get the game map using 0-based index
+        HashMap<String, Object> game = currentGameList.get(gameNumber - 1);
+        Object gameIDObj = game.get("gameID");
+        if (gameIDObj == null) {
+            throw new Exception("Game data is missing the game ID for selected game number.");
+        }
+        // Game ID often comes back as Double from JSON parsing, convert carefully
+        try {
+            return (int) Double.parseDouble(gameIDObj.toString());
+        } catch (NumberFormatException | ClassCastException e) {
+            throw new Exception("Invalid game ID format in stored data: " + gameIDObj);
+        }
+    }
+
+    // Helper method for printing errors consistently
+    private void printError(String message) {
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: " + message + EscapeSequences.RESET_TEXT_COLOR);
     }
 }

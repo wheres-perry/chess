@@ -100,7 +100,7 @@ public class ServerFacade {
      *
      * @param authToken The authentication token
      * @param gameName  The name of the game
-     * @return Response data from the server 
+     * @return Response data from the server
      * @throws Exception if an error occurs during the operation
      */
     public HashMap<String, Object> createGame(String authToken, String gameName) throws Exception {
