@@ -7,6 +7,7 @@ import ui.InGameRepl; // Ensure this is imported
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList; // Import ArrayList if needed for empty list return
+import java.util.Map;
 
 public class ChessClient {
     private final ServerFacade server;
@@ -18,11 +19,16 @@ public class ChessClient {
     private final InGameRepl inGameRepl; // Instance of InGameRepl
 
     public ChessClient(String serverUrl) {
-        this.server = new ServerFacade(serverUrl);
+        this.server = createServerFacade(serverUrl);
         // Pass 'this' (the ChessClient instance) to the REPLs
         this.preLoginRepl = new PreLoginRepl(this);
         this.postLoginRepl = new PostLoginRepl(this);
         this.inGameRepl = new InGameRepl(this);
+    }
+
+    // Add this method for testing
+    protected ServerFacade createServerFacade(String serverUrl) {
+        return new ServerFacade(serverUrl);
     }
 
     public void run() {
@@ -85,26 +91,39 @@ public class ChessClient {
         System.out.println("Game created successfully with ID: " + response.get("gameID"));
     }
 
-    // Modified to RETURN the list
-    @SuppressWarnings("unchecked") // Suppress warning for the cast
+    @SuppressWarnings("unchecked")
     public List<HashMap<String, Object>> listGames() throws Exception {
         if (authToken == null)
             throw new Exception("You must be logged in to list games.");
+
         HashMap<String, Object> response = server.listGames(authToken);
+        List<HashMap<String, Object>> result = new ArrayList<>();
+
         Object gamesObj = response.get("games");
-        if (gamesObj instanceof List) {
-            // Check if the list elements are of the expected type before casting
-            List<?> rawList = (List<?>) gamesObj;
-            if (!rawList.isEmpty() && !(rawList.get(0) instanceof HashMap)) {
-                throw new Exception("Received unexpected game data format from server.");
-            }
-            // Safe to cast now
-            return (List<HashMap<String, Object>>) rawList;
-        } else if (gamesObj == null) {
-            return new ArrayList<>(); // Return empty list if no games key
-        } else {
+
+        if (gamesObj == null) {
+            return result; // Return empty list if no games key
+        }
+
+        if (!(gamesObj instanceof List)) {
             throw new Exception("Received unexpected data format for games list.");
         }
+
+        List<?> gamesList = (List<?>) gamesObj;
+
+        for (Object gameObj : gamesList) {
+            // Convert each game object to HashMap
+            if (gameObj instanceof Map) {
+                // Handle any Map implementation (including LinkedTreeMap from Gson)
+                HashMap<String, Object> gameMap = new HashMap<>();
+                gameMap.putAll((Map<? extends String, ?>) gameObj);
+                result.add(gameMap);
+            } else {
+                System.out.println("Warning: Skipped non-map game object in response");
+            }
+        }
+
+        return result;
     }
 
     // Join/Observe methods now set the in-game state via InGameRepl
@@ -140,7 +159,4 @@ public class ChessClient {
         return inGameRepl.isInGame();
     }
 
-    // Potentially add access to InGameRepl if needed for direct calls from other
-    // REPLs
-    // public InGameRepl getInGameRepl() { return inGameRepl; }
 }
