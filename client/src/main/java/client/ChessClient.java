@@ -1,14 +1,20 @@
 package client;
 
+import chess.ChessGame;
 import ui.PreLoginRepl;
 import ui.PostLoginRepl;
-import ui.InGameRepl; // Ensure this is imported
+import ui.InGameRepl;
+import ui.EscapeSequences; 
 
 import java.util.List;
 import java.util.HashMap;
-import java.util.ArrayList; // Import ArrayList if needed for empty list return
+import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Manages the client-side state and interactions for the chess game,
+ * coordinating between the UI (REPLs) and the server (via ServerFacade).
+ */
 public class ChessClient {
     private final ServerFacade server;
     private String authToken;
@@ -16,136 +22,171 @@ public class ChessClient {
 
     private final PreLoginRepl preLoginRepl;
     private final PostLoginRepl postLoginRepl;
-    private final InGameRepl inGameRepl; // Instance of InGameRepl
+    private final InGameRepl inGameRepl;
 
     public ChessClient(String serverUrl) {
         this.server = createServerFacade(serverUrl);
-        // Pass 'this' (the ChessClient instance) to the REPLs
         this.preLoginRepl = new PreLoginRepl(this);
         this.postLoginRepl = new PostLoginRepl(this);
         this.inGameRepl = new InGameRepl(this);
     }
 
-    // Add this method for testing
     protected ServerFacade createServerFacade(String serverUrl) {
         return new ServerFacade(serverUrl);
     }
 
     public void run() {
-        System.out.println("Welcome to the Chess Game!");
-        // The loop logic correctly switches between REPLs based on state
-        while (true) {
-            if (authToken == null) { // Not logged in
-                if (preLoginRepl.run()) {
-                    break; // Quit requested
+        System.out.println(
+                EscapeSequences.SET_TEXT_COLOR_BLUE + "♕ Welcome to 240 Chess ♕" + EscapeSequences.RESET_TEXT_COLOR);
+        boolean quit = false;
+        while (!quit) {
+            try {
+                if (!isLoggedIn()) {
+                    quit = preLoginRepl.run();
+                } else if (isInGameActive()) {
+                    quit = inGameRepl.run();
+                } else {
+                    quit = postLoginRepl.run();
                 }
-            } else if (isClientInGame()) { // Logged in and in a game
-                if (inGameRepl.run()) { // Run InGameRepl
-                    break; // Quit requested
-                }
-                // If inGameRepl.run() returns false, it means the user left the game,
-                // so the loop continues, and the next iteration will run PostLoginRepl.
-            } else { // Logged in, but not in a game
-                if (postLoginRepl.run()) { // Run PostLoginRepl
-                    break; // Quit requested
-                }
-                // If postLoginRepl.run() returns false, it means the user might have
-                // joined/observed a game or logged out. The loop continues and checks state
-                // again.
+            } catch (Exception e) {
+                // Basic error handling for unexpected issues in the REPL loop
+                System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "An unexpected error occurred: "
+                        + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
+                e.printStackTrace(); // For debugging client errors
             }
         }
-        System.out.println("Thanks for playing!");
+        System.out.println(
+                EscapeSequences.SET_TEXT_COLOR_YELLOW + "Thanks for playing!" + EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    // --- Authentication ---
     public void register(String username, String password, String email) throws Exception {
         HashMap<String, Object> response = server.register(username, password, email);
         authToken = (String) response.get("authToken");
         currentUser = username;
-        // PostLoginRepl handles success message now
+        // Success message printed by PreLoginRepl
     }
 
     public void login(String username, String password) throws Exception {
         HashMap<String, Object> response = server.login(username, password);
         authToken = (String) response.get("authToken");
         currentUser = username;
-        // PostLoginRepl handles success message now
+        // Success message printed by PreLoginRepl
     }
 
     public void logout() throws Exception {
-        if (authToken != null) {
-            server.logout(authToken);
+        if (isLoggedIn()) {
+            try {
+                server.logout(authToken);
+                // Success message printed by PostLoginRepl
+            } catch (Exception e) {
+                System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "Logout request failed: " + e.getMessage()
+                        + EscapeSequences.RESET_TEXT_COLOR);
+                throw e;
+            } finally {
+                authToken = null;
+                currentUser = null;
+                if (inGameRepl != null) {
+                    inGameRepl.setGameStateMap(null, null);
+                    inGameRepl.setInGame(false);
+                }
+            }
         }
-        authToken = null;
-        currentUser = null;
-        inGameRepl.setInGame(false); // Ensure game state is reset on logout
-        // PostLoginRepl handles the success message
     }
 
-    // --- Game Management ---
     public void createGame(String gameName) throws Exception {
-        if (authToken == null)
+        if (!isLoggedIn())
             throw new Exception("You must be logged in to create a game.");
         HashMap<String, Object> response = server.createGame(authToken, gameName);
-        // Consider moving success message to PostLoginRepl after call returns
-        System.out.println("Game created successfully with ID: " + response.get("gameID"));
+        Object gameIdObj = response.get("gameID");
+
+        String gameIdStr = "Unknown";
+        if (gameIdObj instanceof Number) {
+            gameIdStr = String.format("%.0f", ((Number) gameIdObj).doubleValue());
+        } else if (gameIdObj != null) {
+            gameIdStr = gameIdObj.toString();
+        }
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Game '" + gameName
+                + "' created successfully with ID: " + gameIdStr + EscapeSequences.RESET_TEXT_COLOR);
     }
 
     @SuppressWarnings("unchecked")
     public List<HashMap<String, Object>> listGames() throws Exception {
-        if (authToken == null)
+        if (!isLoggedIn())
             throw new Exception("You must be logged in to list games.");
-
         HashMap<String, Object> response = server.listGames(authToken);
-        List<HashMap<String, Object>> result = new ArrayList<>();
-
         Object gamesObj = response.get("games");
 
-        if (gamesObj == null) {
-            return result; // Return empty list if no games key
-        }
-
-        if (!(gamesObj instanceof List)) {
-            throw new Exception("Received unexpected data format for games list.");
-        }
-
-        List<?> gamesList = (List<?>) gamesObj;
-
-        for (Object gameObj : gamesList) {
-            // Convert each game object to HashMap
-            if (gameObj instanceof Map) {
-                // Handle any Map implementation (including LinkedTreeMap from Gson)
-                HashMap<String, Object> gameMap = new HashMap<>();
-                gameMap.putAll((Map<? extends String, ?>) gameObj);
-                result.add(gameMap);
-            } else {
-                System.out.println("Warning: Skipped non-map game object in response");
+        if (gamesObj instanceof List) {
+            List<?> rawList = (List<?>) gamesObj;
+            List<HashMap<String, Object>> result = new ArrayList<>();
+            for (Object item : rawList) {
+                if (item instanceof Map) {
+                    result.add(new HashMap<>((Map<String, ?>) item));
+                } else {
+                    System.err.println("Warning: Found non-Map item in games list: " + item);
+                }
             }
+            return result;
+        } else if (gamesObj == null) {
+            return new ArrayList<>();
+        } else {
+            throw new Exception("Received unexpected data format for games list: " + gamesObj.getClass().getName());
+        }
+    }
+
+    /**
+     * Joins an existing game as a player (WHITE or BLACK).
+     */
+    public void joinGame(int gameID, String color) throws Exception {
+        if (!isLoggedIn())
+            throw new Exception("You must be logged in to join a game.");
+        if (color == null || (!"WHITE".equalsIgnoreCase(color) && !"BLACK".equalsIgnoreCase(color))) {
+            throw new IllegalArgumentException("Invalid color ('WHITE' or 'BLACK') specified for joining.");
         }
 
-        return result;
+        server.joinGame(authToken, gameID, color.toUpperCase());
+
+        ChessGame.TeamColor teamColorEnum = ChessGame.TeamColor.valueOf(color.toUpperCase());
+
+        inGameRepl.setGameStateMap(null, teamColorEnum);
+        inGameRepl.setInGame(true);
+
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully joined game " + gameID + " as " + color
+                + EscapeSequences.RESET_TEXT_COLOR);
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Waiting for game state from server..."
+                + EscapeSequences.RESET_TEXT_COLOR);
+        System.out.println(
+                EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    // Join/Observe methods now set the in-game state via InGameRepl
-    public void joinGame(int gameID, String color) throws Exception {
-        if (authToken == null)
-            throw new Exception("You must be logged in to join a game.");
-        server.joinGame(authToken, gameID, color); // ServerFacade handles potential errors
-        System.out.println("Successfully joined game " + gameID + (color != null ? " as " + color : " (joining)"));
-        inGameRepl.setInGame(true); // Set the flag AFTER successful server call
-        // Board drawing etc. should be triggered by InGameRepl or WebSocket messages
-    }
-
+    /**
+     * Observes an existing game.
+     */
     public void observeGame(int gameID) throws Exception {
-        if (authToken == null)
+        if (!isLoggedIn())
             throw new Exception("You must be logged in to observe a game.");
-        server.joinGame(authToken, gameID, null); // null color means observe
-        System.out.println("Successfully observing game " + gameID);
-        inGameRepl.setInGame(true); // Set the flag AFTER successful server call
-        // Board drawing etc. should be triggered by InGameRepl or WebSocket messages
+
+        server.observeGame(authToken, gameID);
+
+        inGameRepl.setGameStateMap(null, null);
+        inGameRepl.setInGame(true);
+
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully observing game " + gameID
+                + EscapeSequences.RESET_TEXT_COLOR);
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Waiting for game state from server..."
+                + EscapeSequences.RESET_TEXT_COLOR);
+        System.out.println(
+                EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    // --- Getters ---
+    /**
+     * Triggers the server facade to clear the database.
+     * Intended for debugging access from REPLs. Does not reset client state.
+     */
+    public void triggerServerClear() throws Exception {
+        server.clearDatabase(); 
+    }
+
     public String getCurrentUser() {
         return currentUser != null ? currentUser : "Not Logged In";
     }
@@ -154,9 +195,11 @@ public class ChessClient {
         return authToken != null;
     }
 
-    // Added getter for in-game status check needed by PostLoginRepl loop
-    public boolean isClientInGame() {
-        return inGameRepl.isInGame();
+    public boolean isInGameActive() {
+        return inGameRepl != null && inGameRepl.isInGame();
     }
 
+    public String getAuthToken() {
+        return authToken;
+    }
 }

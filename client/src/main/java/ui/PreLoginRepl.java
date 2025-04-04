@@ -3,13 +3,12 @@ package ui;
 import client.ChessClient;
 import java.util.Scanner;
 import java.util.Arrays;
-import java.util.regex.Pattern; // Added for email validation
+import java.util.regex.Pattern;
 
 public class PreLoginRepl {
   private final ChessClient client;
   private final Scanner scanner;
 
-  // Basic email validation pattern
   private static final Pattern EMAIL_PATTERN = Pattern.compile(
       "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
 
@@ -25,7 +24,9 @@ public class PreLoginRepl {
    */
   public boolean run() {
     System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Welcome! Type " + EscapeSequences.SET_BG_COLOR_BLUE
-        + "'help'" + EscapeSequences.RESET_BG_COLOR + " for options.");
+        + "'help'" + EscapeSequences.RESET_BG_COLOR + EscapeSequences.SET_TEXT_COLOR_BLUE + " for options."
+        + EscapeSequences.RESET_TEXT_COLOR);
+
     while (!client.isLoggedIn()) {
       System.out.print(EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR
           + EscapeSequences.SET_TEXT_COLOR_WHITE + "LOGIN "
@@ -33,7 +34,7 @@ public class PreLoginRepl {
           + EscapeSequences.SET_TEXT_BLINKING + "> "
           + EscapeSequences.SET_TEXT_COLOR_GREEN);
       String line = scanner.nextLine().trim();
-      System.out.print(EscapeSequences.RESET_TEXT_COLOR); // Reset color after input
+      System.out.print(EscapeSequences.RESET_TEXT_COLOR);
       String[] args = line.split("\\s+");
       if (args.length == 0)
         continue;
@@ -47,37 +48,34 @@ public class PreLoginRepl {
           case "quit":
             System.out.println(
                 EscapeSequences.SET_TEXT_COLOR_YELLOW + "Exiting application." + EscapeSequences.RESET_TEXT_COLOR);
-            return true; // Signal to exit the main loop
+            return true;
           case "login":
             handleLogin(Arrays.copyOfRange(args, 1, args.length));
-            // Success message handled within handleLogin upon successful client.login()
             break;
           case "register":
             handleRegister(Arrays.copyOfRange(args, 1, args.length));
-            // Success message handled within handleRegister upon successful
-            // client.register()
+            break;
+          case "debug_clear":
+            handleClearDatabase();
             break;
           default:
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Unknown command. Type 'help' for options."
-                + EscapeSequences.RESET_TEXT_COLOR);
+            printError("Unknown command. Type 'help' for options.");
         }
       } catch (Exception e) {
-        // Provide a more user-friendly error message
         printError("Operation failed: " + e.getMessage());
       }
     }
-    // Returns false if loop exited due to successful login/register
     return false;
   }
 
   private void displayHelp() {
     System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "Available commands:");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  help" + EscapeSequences.SET_TEXT_COLOR_WHITE
-        + "                                   - Show this help message");
+        + "                            - Show this help message");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  quit" + EscapeSequences.SET_TEXT_COLOR_WHITE
-        + "                                   - Exit the program");
+        + "                            - Exit the program");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  login <USERNAME> <PASSWORD>"
-        + EscapeSequences.SET_TEXT_COLOR_WHITE + "            - Log in to an existing account");
+        + EscapeSequences.SET_TEXT_COLOR_WHITE + "     - Log in to an existing account");
     System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "  register <USERNAME> <PASSWORD> <EMAIL>"
         + EscapeSequences.SET_TEXT_COLOR_WHITE + " - Create a new account");
     System.out.print(EscapeSequences.RESET_TEXT_COLOR);
@@ -91,13 +89,11 @@ public class PreLoginRepl {
     String username = args[0];
     String password = args[1];
     try {
-      client.login(username, password); // Assuming ChessClient handles auth token storage
+      client.login(username, password);
       // Print success message only if login didn't throw an exception
       System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Logged in successfully as " + username
           + EscapeSequences.RESET_TEXT_COLOR);
     } catch (Exception e) {
-      // Try to provide more specific feedback if possible, otherwise use general
-      // error
       String errorMessage = e.getMessage() != null ? e.getMessage() : "An unknown error occurred during login.";
       if (errorMessage.toLowerCase().contains("unauthorized")) {
         printError("Login failed: Invalid username or password.");
@@ -116,33 +112,39 @@ public class PreLoginRepl {
     String password = args[1];
     String email = args[2];
 
-    // Basic email validation
     if (!EMAIL_PATTERN.matcher(email).matches()) {
       printError("Invalid email format provided.");
       return;
     }
 
     try {
-      client.register(username, password, email); // Assuming ChessClient handles auth token storage
-      // Print success message only if register didn't throw an exception
+      client.register(username, password, email);
       System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Registered and logged in successfully as " + username
           + EscapeSequences.RESET_TEXT_COLOR);
     } catch (Exception e) {
-      // Try to provide more specific feedback if possible
       String errorMessage = e.getMessage() != null ? e.getMessage() : "An unknown error occurred during registration.";
-      if (errorMessage.toLowerCase().contains("already taken") || errorMessage.toLowerCase().contains("conflict")) { // Common
-                                                                                                                     // indicators
-                                                                                                                     // for
-                                                                                                                     // duplicate
-                                                                                                                     // user
-        printError("Registration failed: Username might already be taken.");
+      if (errorMessage.toLowerCase().contains("already taken")) {
+        printError("Registration failed: Username or email might already be taken.");
+      } else if (errorMessage.toLowerCase().contains("bad request")) {
+        printError("Registration failed: Missing username, password, or email.");
       } else {
         printError("Registration failed: " + errorMessage);
       }
     }
   }
 
-  // Helper method for printing errors consistently
+  private void handleClearDatabase() {
+    try {
+      System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Attempting server database clear..."
+          + EscapeSequences.RESET_TEXT_COLOR);
+      client.triggerServerClear(); // Calls the pass-through method in ChessClient
+      System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN
+          + "Debug: Server database clear request sent successfully." + EscapeSequences.RESET_TEXT_COLOR);
+    } catch (Exception e) {
+      printError("Database clear failed: " + e.getMessage());
+    }
+  }
+
   private void printError(String message) {
     System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: " + message + EscapeSequences.RESET_TEXT_COLOR);
   }

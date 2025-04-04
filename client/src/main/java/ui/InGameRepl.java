@@ -1,21 +1,22 @@
 package ui;
 
-import chess.*; // Import necessary chess classes (Game, Board, Piece, Position, Move)
+import chess.*;
 import client.ChessClient;
 
-import java.util.Collection; // Import Collection for highlighting
+import java.util.Collection;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.List;
 
-import static ui.EscapeSequences.*; // Import escape sequences for console coloring
+import static ui.EscapeSequences.*;
 
 public class InGameRepl {
-    private final ChessClient client;
+    private final ChessClient client; // Reference to client for user info etc.
     private final Scanner scanner;
-    private boolean inGame; // Flag to indicate if currently in an active game context
-    private ChessGame currentGame; // Store the current game state (needs to be updated)
-    private ChessGame.TeamColor playerColor; // Store the player's color (WHITE, BLACK, or null for observer)
+    private boolean inGame;
+    private Map<String, Object> currentGameMap;
+    private ChessGame.TeamColor playerColor;
 
-    // Constants for board drawing
     private static final int BOARD_SIZE = 8;
     private static final String[] COL_LABELS = { "a", "b", "c", "d", "e", "f", "g", "h" };
     private static final String[] ROW_LABELS = { "1", "2", "3", "4", "5", "6", "7", "8" };
@@ -24,33 +25,31 @@ public class InGameRepl {
         this.client = client;
         this.scanner = new Scanner(System.in);
         this.inGame = false;
-        this.currentGame = null; // Initialize game state
-        this.playerColor = null; // Initialize player color
+        this.currentGameMap = null;
+        this.playerColor = null;
     }
 
     /**
      * Runs the in-game command loop.
-     * Should be called only when `inGame` is true.
-     *
+     * 
      * @return true if the user wants to quit the application, false otherwise.
      */
     public boolean run() {
-        // Initial board draw should be triggered by ChessClient when game state is
-        // first received.
-        System.out.println(SET_TEXT_COLOR_BLUE + "Entered game mode. Type 'help' for commands.");
+        if (!inGame) {
+            System.out.println(SET_TEXT_COLOR_RED
+                    + "Error: Internal state inconsistency - entered InGameRepl but not marked as 'in game'."
+                    + RESET_TEXT_COLOR);
+            return false;
+        }
+
+        System.out.println(SET_TEXT_COLOR_BLUE + "Entered game mode. Type 'help' for commands." + RESET_TEXT_COLOR);
+        drawBoard();
 
         while (inGame) {
-            String playerStatus;
-            if (playerColor == null) {
-                playerStatus = "Observing";
-            } else {
-                playerStatus = "Playing as " + playerColor;
-            }
+            String playerStatus = (playerColor == null) ? "Observing" : "Playing as " + playerColor;
             System.out.print(RESET_BG_COLOR + RESET_TEXT_COLOR
                     + SET_TEXT_COLOR_WHITE + "[" + client.getCurrentUser() + " - " + playerStatus + "] "
-
                     + SET_TEXT_COLOR_DARK_GREY + SET_TEXT_BLINKING + "> "
-
                     + SET_TEXT_COLOR_GREEN);
 
             String line = scanner.nextLine().trim();
@@ -69,7 +68,7 @@ public class InGameRepl {
                         handleRedraw();
                         break;
                     case "leave":
-                        handleLeave(); // This will set inGame = false
+                        handleLeave();
                         break;
                     case "move":
                         handleMove(args);
@@ -80,18 +79,45 @@ public class InGameRepl {
                     case "highlight":
                         handleHighlight(args);
                         break;
-                    case "quit": // Allow quit from in-game
+                    case "quit":
                         System.out.println(SET_TEXT_COLOR_YELLOW + "Exiting application." + RESET_TEXT_COLOR);
-                        return true; // Signal exit
+                        return true;
                     default:
-                        printError("Unknown command in game. Type 'help' for options.");
+                        printError("Unknown command. Type 'help' for options.");
                 }
             } catch (Exception e) {
                 printError("Command failed: " + e.getMessage());
-                e.printStackTrace(); // Print stack trace for debugging
+                e.printStackTrace(); // For debugging REPL command errors
             }
         }
-        return false; // Returned to PostLogin state, don't quit application yet
+        return false; // User left game, return to PostLogin state
+    }
+
+    // --- State Management ---
+
+    /**
+     * Sets the game state using a Map representation and the player's color.
+     * Called by ChessClient after successfully joining/observing and fetching
+     * state.
+     * 
+     * @param gameMap Map containing the game state data (board, turn, etc.).
+     * @param color   The player's TeamColor (or null if observing).
+     */
+    public void setGameStateMap(Map<String, Object> gameMap, ChessGame.TeamColor color) {
+        this.currentGameMap = gameMap;
+        this.playerColor = color;
+    }
+
+    public void setInGame(boolean inGame) {
+        this.inGame = inGame;
+        if (!inGame) {
+            this.currentGameMap = null;
+            this.playerColor = null;
+        }
+    }
+
+    public boolean isInGame() {
+        return inGame;
     }
 
     private void displayHelp() {
@@ -114,7 +140,7 @@ public class InGameRepl {
     }
 
     private void handleRedraw() {
-        if (currentGame == null) {
+        if (currentGameMap == null) {
             printError("No game data available to redraw.");
             return;
         }
@@ -122,14 +148,12 @@ public class InGameRepl {
     }
 
     private void handleLeave() throws Exception {
-        this.inGame = false;
-        this.currentGame = null; // Clear game state
-        this.playerColor = null;
         System.out.println(SET_TEXT_COLOR_YELLOW + "Leaving game." + RESET_TEXT_COLOR);
+        this.setInGame(false);
     }
 
     private void handleMove(String[] args) throws Exception {
-        if (currentGame == null) {
+        if (currentGameMap == null) {
             printError("No active game.");
             return;
         }
@@ -139,34 +163,22 @@ public class InGameRepl {
         }
         if (args.length < 3 || args.length > 4) {
             printError("Usage: move <FROM> <TO> [PROMOTION_PIECE]");
-            printError("Example: move e2 e4  OR  move a7 a8 q");
             return;
         }
 
         ChessPosition fromPos = parsePosition(args[1]);
         ChessPosition toPos = parsePosition(args[2]);
-        ChessPiece.PieceType promotionType = null;
-        if (args.length == 4) {
-            promotionType = parsePromotionPiece(args[3]);
-            if (promotionType == null) {
-                printError("Invalid promotion piece. Use Q, R, B, or N.");
-                return;
-            }
-        }
+        ChessPiece.PieceType promotionType = (args.length == 4) ? parsePromotionPiece(args[3]) : null;
 
-        if (fromPos == null || toPos == null) {
-            printError("Invalid square format. Use algebraic notation (e.g., a1, h8).");
+        if (fromPos == null || toPos == null || (args.length == 4 && promotionType == null)) {
+            printError("Invalid square or promotion piece format.");
             return;
         }
-
-        // ChessMove move = new ChessMove(fromPos, toPos, promotionType);
-
-        printError("Move execution not implemented yet (Phase 6).");
-
+        printError("Make move functionality not implemented yet.");
     }
 
     private void handleResign() throws Exception {
-        if (currentGame == null) {
+        if (currentGameMap == null) {
             printError("No active game to resign from.");
             return;
         }
@@ -177,203 +189,142 @@ public class InGameRepl {
 
         System.out.print(SET_TEXT_COLOR_YELLOW + "Are you sure you want to resign? (yes/no): " + SET_TEXT_COLOR_WHITE);
         String confirmation = scanner.nextLine().trim().toLowerCase();
-        System.out.print(confirmation);
+        if ("yes".equals(confirmation)) {
+            printError("Resign functionality not implemented yet.");
+        } else {
+            System.out.println("Resignation cancelled.");
+        }
     }
 
     private void handleHighlight(String[] args) throws Exception {
-        if (currentGame == null) {
+        if (currentGameMap == null) {
             printError("No active game to highlight moves in.");
             return;
         }
         if (args.length != 2) {
             printError("Usage: highlight <SQUARE>");
-            printError("Example: highlight e2");
             return;
         }
 
         ChessPosition position = parsePosition(args[1]);
         if (position == null) {
-            printError("Invalid square format. Use algebraic notation (e.g., a1, h8).");
+            printError("Invalid square format.");
             return;
         }
 
-        ChessPiece piece = currentGame.getBoard().getPiece(position);
+        // Need to get piece from map to check if it exists
+        ChessPiece piece = getPieceFromMap(currentGameMap, position); // Use helper
         if (piece == null) {
             printError("No piece at " + args[1]);
             return;
         }
-
-        Collection<ChessMove> validMoves = currentGame.validMoves(position);
-
-        if (validMoves == null || validMoves.isEmpty()) {
-            System.out.println(SET_TEXT_COLOR_YELLOW + "No legal moves for the piece at " + args[1] + "."
-                    + RESET_TEXT_COLOR);
-            drawBoard();
-        } else {
-            System.out.println(SET_TEXT_COLOR_YELLOW + "Highlighting legal moves for " + piece.getPieceType() + " at "
-                    + args[1] + "." + RESET_TEXT_COLOR);
-            drawBoardWithHighlights(validMoves);
-        }
     }
 
-    public void setGameState(ChessGame game, ChessGame.TeamColor color) {
-        this.currentGame = game;
-        this.playerColor = color;
-    }
+    // --- Board Drawing ---
 
     public void drawBoard() {
-        if (currentGame == null) {
-            printError("Cannot draw board, game state is missing.");
+        if (currentGameMap == null) {
+            printError("Cannot draw board, game state map is missing.");
             return;
         }
-        ChessGame.TeamColor perspective;
-        if (playerColor == ChessGame.TeamColor.BLACK) {
-            perspective = ChessGame.TeamColor.BLACK;
-        } else {
-            perspective = ChessGame.TeamColor.WHITE;
-        }
+        ChessGame.TeamColor perspective = (playerColor == ChessGame.TeamColor.BLACK) ? ChessGame.TeamColor.BLACK
+                : ChessGame.TeamColor.WHITE;
         drawBoardInternal(perspective, null);
     }
 
-    private void drawBoardWithHighlights(Collection<ChessMove> validMoves) {
-        if (currentGame == null) {
-            printError("Cannot draw board, game state is missing.");
-            return;
-        }
-        ChessGame.TeamColor perspective;
-        if (playerColor == ChessGame.TeamColor.BLACK) {
-            perspective = ChessGame.TeamColor.BLACK;
-        } else {
-            perspective = ChessGame.TeamColor.WHITE;
-        }
-        drawBoardInternal(perspective, validMoves);
-    }
-
+    /**
+     * Internal method to draw the board from a given perspective.
+     * 
+     * @param perspective The TeamColor perspective (WHITE or BLACK at bottom).
+     * @param validMoves  (Currently unused) Collection of moves to highlight.
+     */
     private void drawBoardInternal(ChessGame.TeamColor perspective, Collection<ChessMove> validMoves) {
-        ChessBoard board = currentGame.getBoard();
         boolean whitePerspective = (perspective == ChessGame.TeamColor.WHITE);
-
-        int rowStart, rowEnd, rowIncrement, colStart, colEnd, colIncrement;
+        int rowStart, rowEnd, rowInc;
+        int colStart, colEnd, colInc;
 
         if (whitePerspective) {
             rowStart = BOARD_SIZE;
             rowEnd = 1;
-            rowIncrement = -1;
+            rowInc = -1;
             colStart = 1;
             colEnd = BOARD_SIZE;
-            colIncrement = 1;
+            colInc = 1;
         } else {
             rowStart = 1;
             rowEnd = BOARD_SIZE;
-            rowIncrement = 1;
+            rowInc = 1;
             colStart = BOARD_SIZE;
             colEnd = 1;
-            colIncrement = -1;
+            colInc = -1;
         }
 
+        // Draw header
         drawHeaderFooter(perspective);
         System.out.println();
 
-        int r = rowStart;
-        boolean continueRows = true;
-
-        while (continueRows) {
+        // Draw rows
+        for (int r = rowStart; whitePerspective ? r >= rowEnd : r <= rowEnd; r += rowInc) {
+            // Draw row label (left)
             System.out.print(
                     SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + " " + ROW_LABELS[r - 1] + " " + RESET_BG_COLOR);
 
-            int c = colStart;
-            boolean continueCols = true;
-
-            while (continueCols) {
+            // Draw squares in the row
+            for (int c = colStart; whitePerspective ? c <= colEnd : c >= colEnd; c += colInc) {
                 ChessPosition currentPos = new ChessPosition(r, c);
-                ChessPiece piece = board.getPiece(currentPos);
+                ChessPiece piece = getPieceFromMap(currentGameMap, currentPos); // Use helper
                 boolean isLightSquare = (r + c) % 2 != 0;
-                String bgColor = getBackgroundColor(currentPos, isLightSquare, validMoves);
+
+                // Directly determine background color instead of using method
+                String bgColor;
+                if (isLightSquare) {
+                    bgColor = SET_BG_COLOR_LIGHT_GREY;
+                } else {
+                    bgColor = SET_BG_COLOR_DARK_GREEN;
+                }
+
                 System.out.print(bgColor);
                 printPiece(piece);
-
-                // Update column and check if we should continue
-                c += colIncrement;
-                if (whitePerspective) {
-                    continueCols = (c <= colEnd);
-                } else {
-                    continueCols = (c >= colEnd);
-                }
             }
 
+            // Draw row label (right)
             System.out.print(
                     SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + " " + ROW_LABELS[r - 1] + " " + RESET_BG_COLOR);
-            System.out.println(RESET_BG_COLOR + RESET_TEXT_COLOR);
-
-            // Update row and check if we should continue
-            r += rowIncrement;
-            if (whitePerspective) {
-                continueRows = (r >= rowEnd);
-            } else {
-                continueRows = (r <= rowEnd);
-            }
+            System.out.println(RESET_BG_COLOR + RESET_TEXT_COLOR); // End of row
         }
 
+        // Draw footer
         drawHeaderFooter(perspective);
         System.out.println();
     }
 
     private void drawHeaderFooter(ChessGame.TeamColor perspective) {
-        System.out.print(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE);
-        System.out.print("   ");
+        System.out.print(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "   "); // Padding
 
         boolean whitePerspective = (perspective == ChessGame.TeamColor.WHITE);
-        int colStart, colEnd, colIncrement;
+        int colStart, colEnd, colInc;
 
         if (whitePerspective) {
             colStart = 0;
             colEnd = BOARD_SIZE;
-            colIncrement = 1;
+            colInc = 1;
         } else {
             colStart = BOARD_SIZE - 1;
             colEnd = 0;
-            colIncrement = -1;
+            colInc = -1;
         }
 
-        for (int c = colStart; (whitePerspective ? c < colEnd : c >= colEnd); c += colIncrement) {
-            System.out.print(String.format(" %s ", COL_LABELS[c]));
-        }
-
-        System.out.print("   ");
-        System.out.print(RESET_BG_COLOR + RESET_TEXT_COLOR);
-    }
-
-    private String getBackgroundColor(ChessPosition position, boolean isLightSquare, Collection<ChessMove> validMoves) {
-        boolean isHighlighted = false;
-        boolean isOriginHighlight = false;
-
-        if (validMoves != null && !validMoves.isEmpty()) {
-            if (position.equals(validMoves.iterator().next().getStartPosition())) {
-                isOriginHighlight = true;
-            }
-            for (ChessMove move : validMoves) {
-                if (position.equals(move.getEndPosition())) {
-                    isHighlighted = true;
-                    break;
-                }
-            }
-        }
-
-        if (isOriginHighlight) {
-            return SET_BG_COLOR_YELLOW;
-        } else if (isHighlighted) {
-            if (isLightSquare) {
-                return SET_BG_COLOR_GREEN;
-            } else {
-                return SET_BG_COLOR_DARK_GREEN;
+        if (whitePerspective) {
+            for (int c = colStart; c < colEnd; c += colInc) {
+                System.out.print(String.format(" %s ", COL_LABELS[c])); // Column labels
             }
         } else {
-            if (isLightSquare) {
-                return SET_BG_COLOR_LIGHT_GREY;
-            } else {
-                return SET_BG_COLOR_DARK_GREY;
+            for (int c = colStart; c >= colEnd; c += colInc) {
+                System.out.print(String.format(" %s ", COL_LABELS[c])); // Column labels
             }
         }
+
+        System.out.print("   " + RESET_BG_COLOR + RESET_TEXT_COLOR); // Padding and reset
     }
 
     private void printPiece(ChessPiece piece) {
@@ -435,26 +386,33 @@ public class InGameRepl {
         }
     }
 
-    // --- Helper Methods ---
-
+    /**
+     * Parses algebraic notation (e.g., "a1", "h8") into a ChessPosition.
+     * 
+     * @param notation The algebraic notation string.
+     * @return ChessPosition object or null if invalid format.
+     */
     private ChessPosition parsePosition(String notation) {
-        if (notation == null || notation.length() != 2) {
+        if (notation == null || notation.length() != 2)
             return null;
-        }
         char colChar = notation.toLowerCase().charAt(0);
         char rowChar = notation.charAt(1);
-        if (colChar < 'a' || colChar > 'h' || rowChar < '1' || rowChar > '8') {
+        if (colChar < 'a' || colChar > 'h' || rowChar < '1' || rowChar > '8')
             return null;
-        }
         int col = colChar - 'a' + 1;
         int row = Character.getNumericValue(rowChar);
         return new ChessPosition(row, col);
     }
 
+    /**
+     * Parses a single character into a promotion piece type.
+     * 
+     * @param pieceChar Character ('Q', 'R', 'B', 'N', case-insensitive).
+     * @return Corresponding ChessPiece.PieceType or null if invalid.
+     */
     private ChessPiece.PieceType parsePromotionPiece(String pieceChar) {
-        if (pieceChar == null || pieceChar.length() != 1) {
+        if (pieceChar == null || pieceChar.length() != 1)
             return null;
-        }
         switch (pieceChar.toUpperCase()) {
             case "Q":
                 return ChessPiece.PieceType.QUEEN;
@@ -473,11 +431,57 @@ public class InGameRepl {
         System.out.println(SET_TEXT_COLOR_RED + "Error: " + message + RESET_TEXT_COLOR);
     }
 
-    public boolean isInGame() {
-        return inGame;
-    }
+    // --- NEW: Helper to extract piece data from the game state map ---
+    /**
+     * Extracts the ChessPiece at a given position from the game state map.
+     * 
+     * @param gameMap  The map representing the current game state.
+     * @param position The position to check.
+     * @return The ChessPiece at that position, or null if empty or error.
+     */
+    @SuppressWarnings("unchecked")
+    private ChessPiece getPieceFromMap(Map<String, Object> gameMap, ChessPosition position) {
+        if (gameMap == null || position == null)
+            return null;
 
-    public void setInGame(boolean inGame) {
-        this.inGame = inGame;
+        try {
+            Object boardObj = gameMap.get("board");
+            if (!(boardObj instanceof Map))
+                return null;
+            Map<String, Object> boardMap = (Map<String, Object>) boardObj;
+
+            Object squaresObj = boardMap.get("squares");
+            List<List<Object>> squaresList = (List<List<Object>>) squaresObj;
+
+            int rowIndex = position.getRow() - 1;
+            int colIndex = position.getColumn() - 1;
+
+            if (rowIndex < 0 || rowIndex >= squaresList.size())
+                return null;
+            List<Object> row = squaresList.get(rowIndex);
+            if (colIndex < 0 || colIndex >= row.size())
+                return null;
+
+            Object pieceObj = row.get(colIndex);
+            if (!(pieceObj instanceof Map))
+                return null;
+            Map<String, Object> pieceMap = (Map<String, Object>) pieceObj;
+            String typeStr = (String) pieceMap.get("pieceType");
+            String colorStr = (String) pieceMap.get("teamColor");
+
+            if (typeStr == null || colorStr == null)
+                return null; // Missing essential info
+
+            // Convert strings to enums
+            ChessPiece.PieceType type = ChessPiece.PieceType.valueOf(typeStr.toUpperCase());
+            ChessGame.TeamColor color = ChessGame.TeamColor.valueOf(colorStr.toUpperCase());
+
+            return new ChessPiece(color, type); // Construct the piece object
+
+        } catch (Exception e) {
+            System.err.println(
+                    "Error parsing piece from game state map for position " + position + ": " + e.getMessage());
+            return null;
+        }
     }
 }
