@@ -4,7 +4,7 @@ import chess.ChessGame;
 import ui.PreLoginRepl;
 import ui.PostLoginRepl;
 import ui.InGameRepl;
-import ui.EscapeSequences; 
+import ui.EscapeSequences;
 
 import java.util.List;
 import java.util.HashMap;
@@ -49,10 +49,12 @@ public class ChessClient {
                     quit = postLoginRepl.run();
                 }
             } catch (Exception e) {
-                // Basic error handling for unexpected issues in the REPL loop
                 System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "An unexpected error occurred: "
                         + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
-                e.printStackTrace(); // For debugging client errors
+                // Only print stack trace if it's not a known client/server communication error
+                if (!(e instanceof ServerFacade.ServerException)) {
+                    e.printStackTrace(); // For debugging purposes
+                }
             }
         }
         System.out.println(
@@ -86,7 +88,7 @@ public class ChessClient {
                 authToken = null;
                 currentUser = null;
                 if (inGameRepl != null) {
-                    inGameRepl.setGameStateMap(null, null);
+                    inGameRepl.setPlayerColor(null); // Reset player color on logout
                     inGameRepl.setInGame(false);
                 }
             }
@@ -97,16 +99,18 @@ public class ChessClient {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to create a game.");
         HashMap<String, Object> response = server.createGame(authToken, gameName);
-        Object gameIdObj = response.get("gameID");
+        Object gameIdObj = response.get("gameID"); // Spec says NewGameResult returns "gameID"
 
         String gameIdStr = "Unknown";
+        // Handle potential number format (like Double) coming from JSON
         if (gameIdObj instanceof Number) {
             gameIdStr = String.format("%.0f", ((Number) gameIdObj).doubleValue());
         } else if (gameIdObj != null) {
             gameIdStr = gameIdObj.toString();
         }
+        // should maybe be deleted in the future
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Game '" + gameName
-                + "' created successfully with ID: " + gameIdStr + EscapeSequences.RESET_TEXT_COLOR);
+                + "' created successfully (Internal ID: " + gameIdStr + ")" + EscapeSequences.RESET_TEXT_COLOR);
     }
 
     @SuppressWarnings("unchecked")
@@ -114,28 +118,37 @@ public class ChessClient {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to list games.");
         HashMap<String, Object> response = server.listGames(authToken);
-        Object gamesObj = response.get("games");
+        Object gamesObj = response.get("games"); 
 
         if (gamesObj instanceof List) {
             List<?> rawList = (List<?>) gamesObj;
             List<HashMap<String, Object>> result = new ArrayList<>();
             for (Object item : rawList) {
                 if (item instanceof Map) {
+                    // Ensure mutable HashMap for potential modifications if needed later
                     result.add(new HashMap<>((Map<String, ?>) item));
                 } else {
-                    System.err.println("Warning: Found non-Map item in games list: " + item);
+                    System.err.println(EscapeSequences.SET_TEXT_COLOR_YELLOW
+                            + "Warning: Found non-Map item in games list: " + item
+                            + EscapeSequences.RESET_TEXT_COLOR);
                 }
             }
             return result;
         } else if (gamesObj == null) {
-            return new ArrayList<>();
+            return new ArrayList<>(); // Return empty list if "games" key is missing or null
         } else {
+            // Somethign is really wrong
             throw new Exception("Received unexpected data format for games list: " + gamesObj.getClass().getName());
         }
     }
 
     /**
      * Joins an existing game as a player (WHITE or BLACK).
+     * Sets the client state to 'in game' and updates the InGameRepl.
+     *
+     * @param gameID The actual ID of the game to join.
+     * @param color  The desired player color ("WHITE" or "BLACK").
+     * @throws Exception If the request fails or the user is not logged in.
      */
     public void joinGame(int gameID, String color) throws Exception {
         if (!isLoggedIn())
@@ -144,37 +157,44 @@ public class ChessClient {
             throw new IllegalArgumentException("Invalid color ('WHITE' or 'BLACK') specified for joining.");
         }
 
-        server.joinGame(authToken, gameID, color.toUpperCase());
+        server.joinGame(authToken, gameID, color.toUpperCase()); // Send request to server
 
+        // Update client state upon successful server response
         ChessGame.TeamColor teamColorEnum = ChessGame.TeamColor.valueOf(color.toUpperCase());
-
-        inGameRepl.setGameStateMap(null, teamColorEnum);
-        inGameRepl.setInGame(true);
+        inGameRepl.setPlayerColor(teamColorEnum); // Inform REPL of the player's color
+        inGameRepl.setInGame(true); // Set client state to in-game
 
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully joined game " + gameID + " as " + color
                 + EscapeSequences.RESET_TEXT_COLOR);
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Waiting for game state from server..."
-                + EscapeSequences.RESET_TEXT_COLOR);
+        // Draw the initial board state immediately
+        inGameRepl.drawBoard();
         System.out.println(
                 EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
 
     /**
      * Observes an existing game.
+     * Sets the client state to 'in game' (observing) and updates the InGameRepl.
+     *
+     * @param gameID The actual ID of the game to observe.
+     * @throws Exception If the request fails or the user is not logged in.
      */
     public void observeGame(int gameID) throws Exception {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to observe a game.");
 
+        // Call server facade to join as observer (no color specified)
         server.observeGame(authToken, gameID);
 
-        inGameRepl.setGameStateMap(null, null);
-        inGameRepl.setInGame(true);
+        // Update client state upon successful server response
+        inGameRepl.setPlayerColor(null); // Set color to null for observers
+        inGameRepl.setInGame(true); // Set client state to in-game (observing)
 
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully observing game " + gameID
                 + EscapeSequences.RESET_TEXT_COLOR);
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Waiting for game state from server..."
-                + EscapeSequences.RESET_TEXT_COLOR);
+        // Draw the initial board state immediately (from White's perspective for
+        // observers)
+        inGameRepl.drawBoard();
         System.out.println(
                 EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
@@ -184,7 +204,7 @@ public class ChessClient {
      * Intended for debugging access from REPLs. Does not reset client state.
      */
     public void triggerServerClear() throws Exception {
-        server.clearDatabase(); 
+        server.clearDatabase();
     }
 
     public String getCurrentUser() {
@@ -196,6 +216,7 @@ public class ChessClient {
     }
 
     public boolean isInGameActive() {
+        // Check the InGameRepl's state directly
         return inGameRepl != null && inGameRepl.isInGame();
     }
 

@@ -8,6 +8,7 @@ package ui;
 public class EscapeSequences {
 
     private static final String UNICODE_ESCAPE = "\u001b";
+    @SuppressWarnings("unused")
     private static final String ANSI_ESCAPE = "\033";
 
     public static final String ERASE_SCREEN = UNICODE_ESCAPE + "[H" + UNICODE_ESCAPE + "[2J";
