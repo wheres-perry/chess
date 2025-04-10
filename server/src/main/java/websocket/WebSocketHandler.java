@@ -1,8 +1,13 @@
 package websocket;
 
 import com.google.gson.Gson;
+
+import chess.InvalidMoveException;
 import dataaccess.DataAccess;
+import dataaccess.DataAccessException;
 import exception.ResponseException;
+import service.ChessService;
+
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
@@ -15,38 +20,55 @@ import java.util.Timer;
 @WebSocket
 public class WebSocketHandler {
 
+  private final ChessService chessService;
+  private final Gson gson = new Gson();
+
   private final ConnectionManager connections = new ConnectionManager();
 
+  public WebSocketHandler(ChessService chessService) {
+    this.chessService = chessService;
+  }
+
   @OnWebSocketMessage
-  public void onMessage(Session session, String message) throws IOException {
-    Action action = new Gson().fromJson(message, Action.class);
-    switch (action.type()) {
-      case ENTER -> enter(action.visitorName(), session);
-      case EXIT -> exit(action.visitorName());
-    }
+  public void onMessage(Session session, String message) {
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 
   private void enter(String visitorName, Session session) throws IOException {
-    connections.add(visitorName, session);
-    var message = String.format("%s is in the shop", visitorName);
-    var notification = new Notification(Notification.Type.ARRIVAL, message);
-    connections.broadcast(visitorName, notification);
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 
   private void exit(String visitorName) throws IOException {
-    connections.remove(visitorName);
-    var message = String.format("%s left the shop", visitorName);
-    var notification = new Notification(Notification.Type.DEPARTURE, message);
-    connections.broadcast(visitorName, notification);
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 
-  public void makeNoise(String petName, String sound) throws ResponseException {
-    try {
-      var message = String.format("%s says %s", petName, sound);
-      var notification = new Notification(Notification.Type.NOISE, message);
-      connections.broadcast("", notification);
-    } catch (Exception ex) {
-      throw new ResponseException(500, ex.getMessage());
-    }
+  private void connect(Session session, ConnectCommand command, String username) throws DataAccessException {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void makeMove(Session session, MakeMoveCommand command, String username)
+      throws DataAccessException, InvalidMoveException {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void resign(Session session, ResignCommand command, String username)
+      throws DataAccessException, InvalidMoveException {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void leave(Session session, LeaveCommand command, String username) throws DataAccessException {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void sendError(Session session, String errorMessage) {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void loadGame(Session session, String errorMessage) {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void sendNotification(Session session, Notification notification) {
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 }

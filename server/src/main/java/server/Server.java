@@ -4,6 +4,7 @@ import spark.*;
 import handlers.*;
 import service.ChessService;
 import dataaccess.DataAccessException;
+import websocket.WebSocketHandler;
 
 public class Server {
 
@@ -20,6 +21,7 @@ public class Server {
             throw new RuntimeException("Server initialization failed due to data access error", e);
         }
 
+        WebSocketHandler webSocketHandler = new WebSocketHandler(chessService);
         ClearHandler clearHandler = new ClearHandler(chessService);
         RegisterHandler registerHandler = new RegisterHandler(chessService);
         LoginHandler loginHandler = new LoginHandler(chessService);
@@ -35,6 +37,7 @@ public class Server {
         Spark.get("/game", (req, res) -> listGamesHandler.handle(req, res));
         Spark.post("/game", (req, res) -> createGameHandler.handle(req, res));
         Spark.put("/game", (req, res) -> joinGameHandler.handle(req, res));
+        Spark.webSocket("/ws", webSocketHandler);
 
         Spark.init();
 
