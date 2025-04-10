@@ -7,7 +7,7 @@ import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import service.ChessService;
+import service.WebSocketService;
 import websocket.commands.*;
 import websocket.messages.*;
 import chess.*;
@@ -18,10 +18,10 @@ import java.io.IOException;
 public class WebSocketHandler {
 
   private final ConnectionManager connections = new ConnectionManager();
-  private final ChessService chessService;
+  private final WebSocketService chessService;
   private final Gson gson = new Gson();
 
-  public WebSocketHandler(ChessService chessService) {
+  public WebSocketHandler(WebSocketService chessService) {
     this.chessService = chessService;
   }
 
