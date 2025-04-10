@@ -18,11 +18,11 @@ import java.io.IOException;
 public class WebSocketHandler {
 
   private final ConnectionManager connections = new ConnectionManager();
-  private final WebSocketService chessService;
+  private final WebSocketService webSocketService;
   private final Gson gson = new Gson();
 
-  public WebSocketHandler(WebSocketService chessService) {
-    this.chessService = chessService;
+  public WebSocketHandler(WebSocketService webSocketService) {
+    this.webSocketService = webSocketService;
   }
 
   @OnWebSocketMessage
@@ -39,7 +39,7 @@ public class WebSocketHandler {
 
     AuthData authData;
     try {
-      authData = chessService.getAuth(authToken);
+      authData = webSocketService.getAuth(authToken);
       if (authData == null) {
         sendError(session, "Error: Unauthorized - Invalid auth token.");
         return;
@@ -67,7 +67,7 @@ public class WebSocketHandler {
       throws IOException, DataAccessException {
     connections.add(username, session, command.getGameID());
 
-    GameData game = chessService.getGameData(command.getGameID());
+    GameData game = webSocketService.getGameData(command.getGameID());
     if (game == null) {
       sendError(session, "Error: Game not found.");
       connections.remove(username, command.getGameID());
@@ -94,7 +94,7 @@ public class WebSocketHandler {
 
   private void makeMove(Session session, MakeMoveCommand command, String username)
       throws IOException, DataAccessException, InvalidMoveException {
-    GameData game = chessService.getGameData(command.getGameID());
+    GameData game = webSocketService.getGameData(command.getGameID());
     if (game == null) {
       throw new InvalidMoveException("Game not found.");
     }
@@ -105,7 +105,7 @@ public class WebSocketHandler {
       throw new InvalidMoveException("Observers cannot make moves.");
     }
 
-    GameData updatedGame = chessService.makeMove(command.getGameID(), command.getMove(), username);
+    GameData updatedGame = webSocketService.makeMove(command.getGameID(), command.getMove(), username);
 
     LoadGameMessage loadGameMsg = new LoadGameMessage(updatedGame);
     connections.broadcast("", command.getGameID(), gson.toJson(loadGameMsg));
@@ -135,7 +135,7 @@ public class WebSocketHandler {
   }
 
   private void leave(Session session, LeaveCommand command, String username) throws IOException, DataAccessException {
-    chessService.leaveGame(command.getGameID(), username);
+    webSocketService.leaveGame(command.getGameID(), username);
 
     connections.remove(username, command.getGameID());
 
@@ -146,7 +146,7 @@ public class WebSocketHandler {
 
   private void resign(Session session, ResignCommand command, String username)
       throws IOException, DataAccessException, InvalidMoveException {
-    chessService.resignGame(command.getGameID(), username);
+    webSocketService.resignGame(command.getGameID(), username);
 
     String notificationText = String.format("%s resigned. The game is over.", username);
     NotificationMessage notificationMsg = new NotificationMessage(notificationText);

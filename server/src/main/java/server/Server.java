@@ -1,27 +1,40 @@
 package server;
 
 import spark.*;
-import handlers.*;
-import service.ChessService;
-import dataaccess.DataAccessException;
 import websocket.WebSocketHandler;
+import dataaccess.implementations.MySQLAuthDAO;
+import dataaccess.implementations.MySQLGameDAO;
+import dataaccess.implementations.MySQLUserDAO;
+import dataaccess.interfaces.AuthDAO;
+import dataaccess.interfaces.GameDAO;
+import dataaccess.interfaces.UserDAO;
+import handlers.*;
+import service.*;
+import dataaccess.DataAccessException;
 
 public class Server {
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
-
         Spark.staticFiles.location("web");
 
-        ChessService chessService;
+        // --- Initialize DAOs ---
+        AuthDAO authDAO;
+        GameDAO gameDAO;
+        UserDAO userDAO;
         try {
-            chessService = new ChessService();
+            authDAO = new MySQLAuthDAO(); // Or MemoryAuthDAO
+            gameDAO = new MySQLGameDAO(); // Or MemoryGameDAO
+            userDAO = new MySQLUserDAO(); // Or MemoryUserDAO
         } catch (DataAccessException e) {
-            System.err.println("Failed to initialize Chess Service: " + e.getMessage());
+            System.err.println("Failed to initialize DAOs: " + e.getMessage());
             throw new RuntimeException("Server initialization failed due to data access error", e);
         }
+        ChessService chessService = new ChessService(userDAO, gameDAO, authDAO);
+        WebSocketService webSocketService = new WebSocketService(authDAO, gameDAO);
 
-        WebSocketHandler webSocketHandler = new WebSocketHandler(chessService);
+        WebSocketHandler webSocketHandler = new WebSocketHandler(webSocketService);
+
         ClearHandler clearHandler = new ClearHandler(chessService);
         RegisterHandler registerHandler = new RegisterHandler(chessService);
         LoginHandler loginHandler = new LoginHandler(chessService);
