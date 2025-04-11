@@ -2,6 +2,7 @@ package client;
 
 import org.junit.jupiter.api.*;
 import server.Server;
+import serverConnection.ServerFacade;
 
 import java.util.HashMap;
 import java.util.List;

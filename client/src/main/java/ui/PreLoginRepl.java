@@ -2,7 +2,7 @@
 package ui;
 
 import client.ChessClient;
-import client.ServerFacade; // Import for exception handling
+import serverConnection.ServerFacade;
 
 import java.util.Scanner;
 import java.util.Arrays;
