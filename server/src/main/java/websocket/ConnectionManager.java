@@ -1,14 +1,10 @@
 package websocket;
 
 import org.eclipse.jetty.websocket.api.Session;
-import websocket.messages.ServerMessage;
-import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Manages WebSocket connections, associating users with games and handling

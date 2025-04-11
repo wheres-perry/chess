@@ -1,20 +1,30 @@
 package client;
 
-import chess.ChessGame;
+import chess.*;
+import websocket.commands.*;
+import websocket.messages.*;
+
 import ui.PreLoginRepl;
 import ui.PostLoginRepl;
 import ui.InGameRepl;
 import ui.EscapeSequences;
 
+import javax.websocket.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Map;
+import com.google.gson.Gson;
 
 /**
  * Manages the client-side state and interactions for the chess game,
- * coordinating between the UI (REPLs) and the server (via ServerFacade).
+ * coordinating between the UI (REPLs) and the server (via ServerFacade and
+ * WebSocket).
  */
+@ClientEndpoint
 public class ChessClient {
     private final ServerFacade server;
     private String authToken;
@@ -24,15 +34,114 @@ public class ChessClient {
     private final PostLoginRepl postLoginRepl;
     private final InGameRepl inGameRepl;
 
-    public ChessClient(String serverUrl) {
-        this.server = createServerFacade(serverUrl);
+    private Session websocketSession;
+    private final String serverWsUrl;
+    private final Gson gson = new Gson();
+
+    public ChessClient(String serverHttpUrl) {
+        this.server = createServerFacade(serverHttpUrl);
         this.preLoginRepl = new PreLoginRepl(this);
         this.postLoginRepl = new PostLoginRepl(this);
         this.inGameRepl = new InGameRepl(this);
+        this.serverWsUrl = serverHttpUrl.replaceFirst("http", "ws") + "/ws";
     }
 
     protected ServerFacade createServerFacade(String serverUrl) {
         return new ServerFacade(serverUrl);
+    }
+
+    private void connectWebSocket() throws Exception {
+        if (websocketSession == null || !websocketSession.isOpen()) {
+            try {
+                URI uri = new URI(serverWsUrl);
+                WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+                this.websocketSession = container.connectToServer(this, uri);
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "WebSocket connected."
+                        + EscapeSequences.RESET_TEXT_COLOR);
+            } catch (URISyntaxException | DeploymentException | IOException e) {
+                throw new Exception("Failed to connect to WebSocket server: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private void disconnectWebSocket() {
+        if (websocketSession != null && websocketSession.isOpen()) {
+            try {
+                websocketSession.close();
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + "WebSocket disconnected."
+                        + EscapeSequences.RESET_TEXT_COLOR);
+            } catch (IOException e) {
+                System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error disconnecting WebSocket: "
+                        + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
+            } finally {
+                websocketSession = null;
+            }
+        }
+    }
+
+    private void sendWebSocketMessage(UserGameCommand command) throws Exception {
+        if (websocketSession == null || !websocketSession.isOpen()) {
+            throw new Exception("WebSocket is not connected. Cannot send command.");
+        }
+        try {
+            String msg = gson.toJson(command);
+            this.websocketSession.getBasicRemote().sendText(msg);
+        } catch (IOException e) {
+            throw new Exception("Failed to send WebSocket message: " + e.getMessage(), e);
+        }
+    }
+
+    @OnOpen
+    public void onOpen(Session session) {
+        this.websocketSession = session;
+    }
+
+    @OnMessage
+    public void onMessage(String message, Session session) {
+        try {
+            ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+            if (inGameRepl != null && inGameRepl.isInGame()) {
+                inGameRepl.handleServerMessage(message);
+            } else {
+                if (serverMessage.getServerMessageType() == ServerMessage.ServerMessageType.ERROR) {
+                    ErrorMessage errorMsg = gson.fromJson(message, ErrorMessage.class);
+                    System.out.println("\n" + EscapeSequences.SET_TEXT_COLOR_RED + "[SERVER ERROR] "
+                            + errorMsg.getErrorMessage() + EscapeSequences.RESET_TEXT_COLOR);
+                } else {
+                    System.out.println("\n" + EscapeSequences.SET_TEXT_COLOR_MAGENTA + "[SERVER MSG] " + message
+                            + EscapeSequences.RESET_TEXT_COLOR);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "Failed to process WebSocket message: "
+                    + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
+            System.err.println("Received raw message: " + message);
+        }
+    }
+
+    @OnClose
+    public void onClose(Session session, CloseReason reason) {
+        this.websocketSession = null;
+        if (inGameRepl.isInGame()) {
+            System.out.println("\n" + EscapeSequences.SET_TEXT_COLOR_YELLOW
+                    + "WebSocket connection closed unexpectedly. Returning to lobby."
+                    + EscapeSequences.RESET_TEXT_COLOR);
+            inGameRepl.setInGame(false);
+            inGameRepl.setPlayerColor(null);
+        }
+    }
+
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "WebSocket @OnError: " + throwable.getMessage()
+                + EscapeSequences.RESET_TEXT_COLOR);
+        this.websocketSession = null;
+        if (inGameRepl.isInGame()) {
+            System.out.println("\n" + EscapeSequences.SET_TEXT_COLOR_YELLOW + "WebSocket error. Returning to lobby."
+                    + EscapeSequences.RESET_TEXT_COLOR);
+            inGameRepl.setInGame(false);
+            inGameRepl.setPlayerColor(null);
+        }
     }
 
     public void run() {
@@ -51,12 +160,11 @@ public class ChessClient {
             } catch (Exception e) {
                 System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "An unexpected error occurred: "
                         + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
-                // Only print stack trace if it's not a known client/server communication error
                 if (!(e instanceof ServerFacade.ServerException)) {
-                    e.printStackTrace(); // For debugging purposes
                 }
             }
         }
+        disconnectWebSocket();
         System.out.println(
                 EscapeSequences.SET_TEXT_COLOR_YELLOW + "Thanks for playing!" + EscapeSequences.RESET_TEXT_COLOR);
     }
@@ -65,31 +173,32 @@ public class ChessClient {
         HashMap<String, Object> response = server.register(username, password, email);
         authToken = (String) response.get("authToken");
         currentUser = username;
-        // Success message printed by PreLoginRepl
     }
 
     public void login(String username, String password) throws Exception {
         HashMap<String, Object> response = server.login(username, password);
         authToken = (String) response.get("authToken");
         currentUser = username;
-        // Success message printed by PreLoginRepl
     }
 
     public void logout() throws Exception {
         if (isLoggedIn()) {
             try {
+                if (isInGameActive() && inGameRepl.getCurrentGameID() != null) {
+                    sendLeaveCommand();
+                } else {
+                    disconnectWebSocket();
+                }
                 server.logout(authToken);
-                // Success message printed by PostLoginRepl
             } catch (Exception e) {
                 System.err.println(EscapeSequences.SET_TEXT_COLOR_RED + "Logout request failed: " + e.getMessage()
                         + EscapeSequences.RESET_TEXT_COLOR);
-                throw e;
             } finally {
                 authToken = null;
                 currentUser = null;
                 if (inGameRepl != null) {
-                    inGameRepl.setPlayerColor(null); // Reset player color on logout
                     inGameRepl.setInGame(false);
+                    inGameRepl.setPlayerColor(null);
                 }
             }
         }
@@ -99,16 +208,14 @@ public class ChessClient {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to create a game.");
         HashMap<String, Object> response = server.createGame(authToken, gameName);
-        Object gameIdObj = response.get("gameID"); // Spec says NewGameResult returns "gameID"
+        Object gameIdObj = response.get("gameID");
 
         String gameIdStr = "Unknown";
-        // Handle potential number format (like Double) coming from JSON
         if (gameIdObj instanceof Number) {
             gameIdStr = String.format("%.0f", ((Number) gameIdObj).doubleValue());
         } else if (gameIdObj != null) {
             gameIdStr = gameIdObj.toString();
         }
-        // should maybe be deleted in the future
         System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Game '" + gameName
                 + "' created successfully (Internal ID: " + gameIdStr + ")" + EscapeSequences.RESET_TEXT_COLOR);
     }
@@ -118,14 +225,13 @@ public class ChessClient {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to list games.");
         HashMap<String, Object> response = server.listGames(authToken);
-        Object gamesObj = response.get("games"); 
+        Object gamesObj = response.get("games");
 
         if (gamesObj instanceof List) {
             List<?> rawList = (List<?>) gamesObj;
             List<HashMap<String, Object>> result = new ArrayList<>();
             for (Object item : rawList) {
                 if (item instanceof Map) {
-                    // Ensure mutable HashMap for potential modifications if needed later
                     result.add(new HashMap<>((Map<String, ?>) item));
                 } else {
                     System.err.println(EscapeSequences.SET_TEXT_COLOR_YELLOW
@@ -135,21 +241,12 @@ public class ChessClient {
             }
             return result;
         } else if (gamesObj == null) {
-            return new ArrayList<>(); // Return empty list if "games" key is missing or null
+            return new ArrayList<>();
         } else {
-            // Somethign is really wrong
             throw new Exception("Received unexpected data format for games list: " + gamesObj.getClass().getName());
         }
     }
 
-    /**
-     * Joins an existing game as a player (WHITE or BLACK).
-     * Sets the client state to 'in game' and updates the InGameRepl.
-     *
-     * @param gameID The actual ID of the game to join.
-     * @param color  The desired player color ("WHITE" or "BLACK").
-     * @throws Exception If the request fails or the user is not logged in.
-     */
     public void joinGame(int gameID, String color) throws Exception {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to join a game.");
@@ -157,52 +254,76 @@ public class ChessClient {
             throw new IllegalArgumentException("Invalid color ('WHITE' or 'BLACK') specified for joining.");
         }
 
-        server.joinGame(authToken, gameID, color.toUpperCase()); // Send request to server
+        server.joinGame(authToken, gameID, color.toUpperCase());
 
-        // Update client state upon successful server response
+        connectWebSocket();
+        sendWebSocketMessage(new ConnectCommand(authToken, gameID));
+
         ChessGame.TeamColor teamColorEnum = ChessGame.TeamColor.valueOf(color.toUpperCase());
-        inGameRepl.setPlayerColor(teamColorEnum); // Inform REPL of the player's color
-        inGameRepl.setInGame(true); // Set client state to in-game
+        inGameRepl.setPlayerColor(teamColorEnum);
+        inGameRepl.setInGame(true);
 
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully joined game " + gameID + " as " + color
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully requested to join game " + gameID
+                + " as " + color + ". Waiting for game state..."
                 + EscapeSequences.RESET_TEXT_COLOR);
-        // Draw the initial board state immediately
-        inGameRepl.drawBoard();
-        System.out.println(
-                EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    /**
-     * Observes an existing game.
-     * Sets the client state to 'in game' (observing) and updates the InGameRepl.
-     *
-     * @param gameID The actual ID of the game to observe.
-     * @throws Exception If the request fails or the user is not logged in.
-     */
     public void observeGame(int gameID) throws Exception {
         if (!isLoggedIn())
             throw new Exception("You must be logged in to observe a game.");
 
-        // Call server facade to join as observer (no color specified)
-        server.observeGame(authToken, gameID);
+        connectWebSocket();
+        sendWebSocketMessage(new ConnectCommand(authToken, gameID));
 
-        // Update client state upon successful server response
-        inGameRepl.setPlayerColor(null); // Set color to null for observers
-        inGameRepl.setInGame(true); // Set client state to in-game (observing)
+        inGameRepl.setPlayerColor(null);
+        inGameRepl.setInGame(true);
 
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully observing game " + gameID
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_GREEN + "Successfully requested to observe game " + gameID
+                + ". Waiting for game state..."
                 + EscapeSequences.RESET_TEXT_COLOR);
-        // Draw the initial board state immediately (from White's perspective for
-        // observers)
-        inGameRepl.drawBoard();
-        System.out.println(
-                EscapeSequences.SET_TEXT_COLOR_BLUE + "Type 'help' for commands." + EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    /**
-     * Triggers the server facade to clear the database.
-     * Intended for debugging access from REPLs. Does not reset client state.
-     */
+    public void sendLeaveCommand() throws Exception {
+        if (!isLoggedIn() || !isInGameActive())
+            throw new Exception("Must be logged in and in a game to leave.");
+        Integer gameID = inGameRepl.getCurrentGameID();
+        if (gameID == null)
+            throw new Exception("Cannot leave, game ID is unknown.");
+
+        LeaveCommand command = new LeaveCommand(authToken, gameID);
+        sendWebSocketMessage(command);
+
+        disconnectWebSocket();
+        inGameRepl.setInGame(false);
+        inGameRepl.setPlayerColor(null);
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Left game. Returning to lobby."
+                + EscapeSequences.RESET_TEXT_COLOR);
+    }
+
+    public void sendMakeMoveCommand(ChessMove move) throws Exception {
+        if (!isLoggedIn() || !isInGameActive())
+            throw new Exception("Must be logged in and in a game to make a move.");
+        Integer gameID = inGameRepl.getCurrentGameID();
+        if (gameID == null)
+            throw new Exception("Cannot make move, game ID is unknown.");
+        if (move == null)
+            throw new Exception("Move cannot be null.");
+
+        MakeMoveCommand command = new MakeMoveCommand(authToken, gameID, move);
+        sendWebSocketMessage(command);
+    }
+
+    public void sendResignCommand() throws Exception {
+        if (!isLoggedIn() || !isInGameActive())
+            throw new Exception("Must be logged in and in a game to resign.");
+        Integer gameID = inGameRepl.getCurrentGameID();
+        if (gameID == null)
+            throw new Exception("Cannot resign, game ID is unknown.");
+
+        ResignCommand command = new ResignCommand(authToken, gameID);
+        sendWebSocketMessage(command);
+    }
+
     public void triggerServerClear() throws Exception {
         server.clearDatabase();
     }
@@ -216,7 +337,6 @@ public class ChessClient {
     }
 
     public boolean isInGameActive() {
-        // Check the InGameRepl's state directly
         return inGameRepl != null && inGameRepl.isInGame();
     }
 
