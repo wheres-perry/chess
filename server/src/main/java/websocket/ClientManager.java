@@ -96,17 +96,14 @@ public class ClientManager {
         if (matchId.equals(link.matchID)) {
           if (skipParticipant == null || !Objects.equals(link.participantName, skipParticipant)) {
             try {
-              // System.out.println("Sending to: " + link.participantName);
               link.transmit(json);
             } catch (IOException e) {
               System.err.println(
                   "Failed broadcast to " + link.participantName + " in match " + matchId + ": " + e.getMessage());
               toRemove.add(link);
-              // Consider collecting errors instead of throwing the first one
-              // throw e; // Potentially stops broadcasting to others
             }
           } else {
-            // System.out.println("Skipping excluded participant: " + skipParticipant);
+            // We skipped this participant
           }
         }
       } else {

@@ -164,21 +164,16 @@ public class ServerFacade {
                     && (playerColor.equalsIgnoreCase("WHITE") || playerColor.equalsIgnoreCase("BLACK"))) {
                 requestBody.put("playerColor", playerColor.toUpperCase());
             } else {
-                // Allow observing by not providing playerColor in HTTP, but need a different
-                // method/check?
-                // For joining as a player, color is required by the current logic.
-                // If the user only wants to observe, they should call observeGame.
                 throw new IllegalArgumentException("Player color (WHITE or BLACK) is required to join as player.");
             }
             httpClient.sendRequest("PUT", "/game", authToken, requestBody);
 
-            // Connect WebSocket and send application-level connect command
             connectWebSocketAndSendConnectCommand(authToken, gameID); // Pass only necessary info
 
         } catch (HttpClient.HttpException e) {
             throw new ServerFacadeException("HTTP request to join game failed: " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {
-            throw new ServerFacadeException(e.getMessage(), e); // Propagate argument error
+            throw new ServerFacadeException(e.getMessage(), e);
         } catch (Exception e) {
             throw new ServerFacadeException(
                     "WebSocket connection or command failed after joining game: " + e.getMessage(), e);
@@ -198,14 +193,13 @@ public class ServerFacade {
      */
     public void observeGame(String authToken, int gameID, String username) throws ServerFacadeException {
         try {
-            // For observation, send PUT /game request *without* playerColor
+
             HashMap<String, Object> requestBody = new HashMap<>();
             requestBody.put("gameID", gameID);
-            // Do NOT add playerColor for observation via HTTP
+
             httpClient.sendRequest("PUT", "/game", authToken, requestBody);
 
-            // Connect WebSocket and send application-level connect command
-            connectWebSocketAndSendConnectCommand(authToken, gameID); // Pass only necessary info
+            connectWebSocketAndSendConnectCommand(authToken, gameID);
 
         } catch (HttpClient.HttpException e) {
             throw new ServerFacadeException("HTTP request to observe game failed: " + e.getMessage(), e);
@@ -233,16 +227,12 @@ public class ServerFacade {
                 System.err.println("Warning: Error disconnecting existing WebSocket: " + e.getMessage());
             }
         }
-        // Ensure listener is set
         if (this.webSocketListener == null) {
             throw new IllegalStateException("WebSocketListener must be set on ServerFacade before connecting.");
         }
 
-        // Create and connect the WebSocket client
         webSocketClient = new WebSocketClient(serverBaseUrl, this.webSocketListener);
-        webSocketClient.connect(); // Establish the raw WebSocket connection (blocks until open or timeout)
-
-        // Check if connection was successful before sending command
+        webSocketClient.connect();
         if (!webSocketClient.isConnected()) {
             throw new Exception("Failed to establish WebSocket connection.");
         }
@@ -279,11 +269,10 @@ public class ServerFacade {
         if (webSocketClient == null) {
             System.err.println(
                     "[ServerFacade] Warning: Attempting to leave game, but WebSocket was never connected or already cleaned up.");
-            return; // Nothing to do if client wasn't even initialized
+            return;
         }
         if (!webSocketClient.isConnected()) {
-            // If not connected, we can't send the command, but we should ensure the client
-            // reference is cleared
+
             System.err.println(
                     "[ServerFacade] Warning: WebSocket not connected. Cannot send leave command. Cleaning up local reference.");
             webSocketClient = null;
@@ -294,12 +283,8 @@ public class ServerFacade {
             webSocketClient.sendLeave(authToken, gameID);
             System.out.println("[ServerFacade] LEAVE command sent for gameID: " + gameID);
         } catch (Exception e) {
-            // Log the error, but proceed to disconnect attempt anyway
             System.err.println("[ServerFacade] Error sending Leave command: " + e.getMessage());
-            // Don't re-throw yet, try to disconnect
         } finally {
-            // Attempt to disconnect the WebSocket after sending leave, regardless of send
-            // success
             try {
                 if (webSocketClient != null && webSocketClient.isConnected()) {
                     webSocketClient.disconnect();
@@ -309,7 +294,7 @@ public class ServerFacade {
                 System.err.println("[ServerFacade] Error disconnecting WebSocket after sending leave: "
                         + disconnectEx.getMessage());
             }
-            webSocketClient = null; // Clear the reference after attempting disconnect
+            webSocketClient = null;
         }
     }
 
