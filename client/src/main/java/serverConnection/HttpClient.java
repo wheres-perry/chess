@@ -1,4 +1,4 @@
-package serverConnection;
+package serverconnection;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -17,8 +17,8 @@ import java.util.*;
 public class HttpClient {
 
   private final String serverHttpUrl;
-  private static final Gson gson = new Gson();
-  private static final Type mapType = new TypeToken<HashMap<String, Object>>() {
+  private static final Gson JSON = new Gson();
+  private static final Type MAPTYPE = new TypeToken<HashMap<String, Object>>() {
   }.getType();
 
   public HttpClient(String serverUrl) {
@@ -52,7 +52,7 @@ public class HttpClient {
       if (request != null && !method.equals("GET") && !method.equals("DELETE")) {
         http.setDoOutput(true);
         http.addRequestProperty("Content-Type", "application/json");
-        String reqBody = gson.toJson(request);
+        String reqBody = JSON.toJson(request);
         try (OutputStream reqStream = http.getOutputStream()) {
           reqStream.write(reqBody.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
@@ -93,7 +93,7 @@ public class HttpClient {
             return new HashMap<>();
           }
           try {
-            HashMap<String, Object> result = gson.fromJson(respData, mapType);
+            HashMap<String, Object> result = JSON.fromJson(respData, MAPTYPE);
             return (result != null) ? result : new HashMap<>();
           } catch (com.google.gson.JsonSyntaxException e) {
             throw new HttpException("Failed to parse successful HTTP server response JSON: " + e.getMessage()
@@ -120,7 +120,7 @@ public class HttpClient {
             }
           } else {
             try {
-              Map<String, Object> errorJson = gson.fromJson(errorBody, mapType);
+              Map<String, Object> errorJson = JSON.fromJson(errorBody, MAPTYPE);
               if (errorJson != null && errorJson.containsKey("message")) {
                 errorMessage = (String) errorJson.get("message");
               } else {

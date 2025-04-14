@@ -2,8 +2,8 @@ package ui;
 
 import chess.*;
 import client.ChessClient;
-import serverConnection.ServerFacade;
-import serverConnection.WebSocketClient;
+import serverconnection.ServerFacade;
+import serverconnection.WebSocketClient;
 import websocket.messages.*;
 import java.util.*;
 

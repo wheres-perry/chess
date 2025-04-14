@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class ClientManager {
   public final ConcurrentHashMap<String, ClientLink> userLinks = new ConcurrentHashMap<>();
-  private static final Gson serializer = new Gson();
+  private static final Gson SERAILIZER = new Gson();
 
   /**
    * Registers a new client link for a match and user.
@@ -81,7 +81,7 @@ public class ClientManager {
    */
   public void notifyMatch(Integer matchId, String skipParticipant, ServerMessage msg) throws IOException {
     var toRemove = new ArrayList<ClientLink>();
-    String json = serializer.toJson(msg);
+    String json = SERAILIZER.toJson(msg);
 
     if (matchId == null) {
       System.err.println("[ClientManager] Broadcast attempted with null matchId.");
