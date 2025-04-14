@@ -16,7 +16,7 @@ import java.util.Map; // Import Map for entrySet iteration
  */
 public class ConnectionManager {
   // Map username (visitorName) to their connection details
-  public final ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
+  public final ConcurrentHashMap<String, ClientLink> connections = new ConcurrentHashMap<>();
   private static final Gson gson = new Gson(); // Gson for serializing messages
 
   /**
@@ -29,7 +29,7 @@ public class ConnectionManager {
    * @param session  The new WebSocket session.
    */
   public void add(Integer gameID, String username, Session session) {
-    var connection = new Connection(gameID, username, session);
+    var connection = new ClientLink(gameID, username, session);
     connections.put(username, connection);
     System.out.println("Added connection for user: " + username + " in game: " + gameID); // Logging
   }
@@ -41,7 +41,7 @@ public class ConnectionManager {
    */
   public void remove(String username) {
     if (username != null) {
-      Connection removed = connections.remove(username);
+      ClientLink removed = connections.remove(username);
       if (removed != null) {
         System.out.println("Removed connection for user: " + username); // Logging
       }
@@ -58,8 +58,8 @@ public class ConnectionManager {
    */
   public String removeBySession(Session session) {
     String userToRemove = null;
-    for (Map.Entry<String, Connection> entry : connections.entrySet()) {
-      if (entry.getValue().session.equals(session)) {
+    for (Map.Entry<String, ClientLink> entry : connections.entrySet()) {
+      if (entry.getValue().gameSession.equals(session)) {
         userToRemove = entry.getKey();
         break;
       }
@@ -83,7 +83,7 @@ public class ConnectionManager {
    *                     is thrown).
    */
   public void broadcast(Integer gameID, String excludeUsername, ServerMessage message) throws IOException {
-    var removeList = new ArrayList<Connection>();
+    var removeList = new ArrayList<ClientLink>();
     String messageJson = gson.toJson(message); // Serialize the message once
 
     if (gameID == null) {
@@ -93,8 +93,8 @@ public class ConnectionManager {
 
     System.out.println("Broadcasting to game " + gameID + " (excluding " + excludeUsername + "): " + messageJson); // Logging
 
-    for (Connection c : connections.values()) {
-      if (c.session.isOpen()) {
+    for (ClientLink c : connections.values()) {
+      if (c.gameSession.isOpen()) {
         // Check if connection belongs to the target game
         if (gameID.equals(c.gameID)) {
           // Check if this connection should be excluded
@@ -120,7 +120,7 @@ public class ConnectionManager {
 
     // Clean up connections that were closed or failed during broadcast
     for (var c : removeList) {
-      removeBySession(c.session); // Use removeBySession to ensure correct removal
+      removeBySession(c.gameSession); // Use removeBySession to ensure correct removal
     }
   }
 
@@ -132,8 +132,8 @@ public class ConnectionManager {
    * @throws IOException If the user is found but sending fails.
    */
   public void sendMessageToUser(String username, ServerMessage message) throws IOException {
-    Connection targetConnection = connections.get(username);
-    if (targetConnection != null && targetConnection.session.isOpen()) {
+    ClientLink targetConnection = connections.get(username);
+    if (targetConnection != null && targetConnection.gameSession.isOpen()) {
       String messageJson = gson.toJson(message);
       System.out.println("Sending direct message to " + username + ": " + messageJson); // Logging
       targetConnection.send(messageJson);
