@@ -19,6 +19,10 @@ import websocket.messages.*;
 
 import java.io.IOException;
 
+/**
+ * Handles WebSocket connections and routes chess game commands between clients
+ * and the server.
+ */
 @WebSocket
 public class WebSocketHandler {
 
@@ -27,16 +31,25 @@ public class WebSocketHandler {
   private final ClientManager clientManager = new ClientManager();
   private final Gson serializer = new Gson();
 
+  /**
+   * Constructs a WebSocketHandler with the given DAOs.
+   */
   public WebSocketHandler(AuthDAO authDAO, GameDAO gameDAO) {
     this.authDAO = authDAO;
     this.gameDAO = gameDAO;
   }
 
+  /**
+   * Called when a new WebSocket connection is established.
+   */
   @OnWebSocketConnect
   public void onConnect(Session session) {
     System.out.println("WebSocket connected: " + session.getRemoteAddress());
   }
 
+  /**
+   * Called when a WebSocket connection is closed.
+   */
   @OnWebSocketClose
   public void onClose(Session session, int statusCode, String reason) {
     System.out
@@ -44,6 +57,9 @@ public class WebSocketHandler {
     handleDisconnect(session);
   }
 
+  /**
+   * Called when a WebSocket error occurs.
+   */
   @OnWebSocketError
   public void onError(Session session, Throwable throwable) {
     System.err.println("WebSocket error on session " + session.getRemoteAddress() + ": " + throwable.getMessage());
@@ -51,6 +67,10 @@ public class WebSocketHandler {
     handleDisconnect(session);
   }
 
+  /**
+   * Called when a message is received from a client.
+   * Parses the message and dispatches it to the appropriate handler.
+   */
   @OnWebSocketMessage
   public void onMessage(Session session, String message) throws IOException {
     AuthData authData = null;
@@ -94,6 +114,9 @@ public class WebSocketHandler {
     }
   }
 
+  /**
+   * Handles a client request to connect to a game.
+   */
   private void handleConnect(Session session, ConnectCommand command, AuthData authData)
       throws DataAccessException, IOException {
     GameData gameData = gameDAO.getGame(command.getGameID());
@@ -115,6 +138,9 @@ public class WebSocketHandler {
     clientManager.notifyMatch(command.getGameID(), authData.username(), notificationMsg);
   }
 
+  /**
+   * Handles a client request to make a move in a game.
+   */
   private void handleMakeMove(Session session, MakeMoveCommand command, AuthData authData)
       throws DataAccessException, IOException {
     GameData gameData = gameDAO.getGame(command.getGameID());
@@ -156,6 +182,10 @@ public class WebSocketHandler {
     }
   }
 
+  /**
+   * Checks the game state after a move and notifies players if the game is in
+   * check, checkmate, or stalemate.
+   */
   private void handlePostMoveChecks(Integer gameID, ChessGame game) throws IOException {
     ChessGame.TeamColor currentTurn = game.getTeamTurn();
     if (currentTurn == null)
@@ -174,6 +204,9 @@ public class WebSocketHandler {
     }
   }
 
+  /**
+   * Handles a client request to leave a game.
+   */
   private void handleLeave(Session session, LeaveCommand command, AuthData authData)
       throws DataAccessException, IOException {
     GameData gameData = gameDAO.getGame(command.getGameID());
@@ -198,6 +231,9 @@ public class WebSocketHandler {
     clientManager.unregister(username);
   }
 
+  /**
+   * Handles a client request to resign from a game.
+   */
   private void handleResign(Session session, ResignCommand command, AuthData authData)
       throws DataAccessException, IOException {
     GameData gameData = gameDAO.getGame(command.getGameID());
@@ -222,6 +258,9 @@ public class WebSocketHandler {
     clientManager.notifyMatch(command.getGameID(), null, notificationMsg);
   }
 
+  /**
+   * Handles cleanup and notifications when a client disconnects.
+   */
   private void handleDisconnect(Session session) {
     ClientLink removedLink = clientManager.unregisterBySession(session);
     if (removedLink != null) {
@@ -259,6 +298,9 @@ public class WebSocketHandler {
     }
   }
 
+  /**
+   * Sends a message directly to a client session.
+   */
   private void sendDirectMessage(Session session, ServerMessage message) throws IOException {
     if (session.isOpen()) {
       String messageJson = serializer.toJson(message);
@@ -266,6 +308,9 @@ public class WebSocketHandler {
     }
   }
 
+  /**
+   * Sends an error message to a client session.
+   */
   private void sendError(Session session, String errorMessage) throws IOException {
     ErrorMessage error = new ErrorMessage(errorMessage);
     sendDirectMessage(session, error);
