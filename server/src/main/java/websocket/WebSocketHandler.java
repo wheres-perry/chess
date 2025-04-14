@@ -270,18 +270,15 @@ public class WebSocketHandler {
         try {
           GameData gameData = gameDAO.getGame(gameID);
           if (gameData != null) {
-            boolean playerLeft = false;
             GameData updatedGameData = gameData;
             if (username.equals(gameData.whiteUsername())) {
               updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(),
                   gameData.game());
               gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-              playerLeft = true;
             } else if (username.equals(gameData.blackUsername())) {
               updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
                   gameData.game());
               gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-              playerLeft = true;
             }
             String notificationText = String.format("%s disconnected.", username);
             NotificationMessage notificationMsg = new NotificationMessage(notificationText);
