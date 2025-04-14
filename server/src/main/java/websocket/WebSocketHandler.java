@@ -9,10 +9,7 @@ import dataaccess.interfaces.GameDAO;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
 import websocket.messages.*;
@@ -26,7 +23,6 @@ import java.io.IOException;
 @WebSocket
 public class WebSocketHandler {
 
-  private final AuthDAO authDAO;
   private final GameDAO gameDAO;
   private final ClientManager clientManager = new ClientManager();
   private final Gson serializer = new Gson();
@@ -35,7 +31,6 @@ public class WebSocketHandler {
    * Constructs a WebSocketHandler with the given DAOs.
    */
   public WebSocketHandler(AuthDAO authDAO, GameDAO gameDAO) {
-    this.authDAO = authDAO;
     this.gameDAO = gameDAO;
   }
 
@@ -45,73 +40,6 @@ public class WebSocketHandler {
   @OnWebSocketConnect
   public void onConnect(Session session) {
     System.out.println("WebSocket connected: " + session.getRemoteAddress());
-  }
-
-  /**
-   * Called when a WebSocket connection is closed.
-   */
-  @OnWebSocketClose
-  public void onClose(Session session, int statusCode, String reason) {
-    System.out
-        .println("WebSocket closed: " + session.getRemoteAddress() + " Code: " + statusCode + " Reason: " + reason);
-    handleDisconnect(session);
-  }
-
-  /**
-   * Called when a WebSocket error occurs.
-   */
-  @OnWebSocketError
-  public void onError(Session session, Throwable throwable) {
-    System.err.println("WebSocket error on session " + session.getRemoteAddress() + ": " + throwable.getMessage());
-    throwable.printStackTrace(System.err);
-    handleDisconnect(session);
-  }
-
-  /**
-   * Called when a message is received from a client.
-   * Parses the message and dispatches it to the appropriate handler.
-   */
-  @OnWebSocketMessage
-  public void onMessage(Session session, String message) throws IOException {
-    AuthData authData = null;
-    try {
-      UserGameCommand baseCommand = serializer.fromJson(message, UserGameCommand.class);
-      String authToken = baseCommand.getAuthToken();
-      authData = authDAO.getAuth(authToken);
-      if (authData == null) {
-        sendError(session, "Unauthorized - Invalid or missing authToken.");
-        return;
-      }
-      switch (baseCommand.getCommandType()) {
-        case CONNECT:
-          ConnectCommand connectCmd = serializer.fromJson(message, ConnectCommand.class);
-          handleConnect(session, connectCmd, authData);
-          break;
-        case MAKE_MOVE:
-          MakeMoveCommand moveCmd = serializer.fromJson(message, MakeMoveCommand.class);
-          handleMakeMove(session, moveCmd, authData);
-          break;
-        case LEAVE:
-          LeaveCommand leaveCmd = serializer.fromJson(message, LeaveCommand.class);
-          handleLeave(session, leaveCmd, authData);
-          break;
-        case RESIGN:
-          ResignCommand resignCmd = serializer.fromJson(message, ResignCommand.class);
-          handleResign(session, resignCmd, authData);
-          break;
-        default:
-          sendError(session, "Unknown command type: " + baseCommand.getCommandType());
-          break;
-      }
-    } catch (com.google.gson.JsonSyntaxException ex) {
-      sendError(session, "Invalid command format: " + ex.getMessage());
-    } catch (DataAccessException e) {
-      sendError(session, "Data access error: " + e.getMessage());
-    } catch (Exception e) {
-      System.err.println("Unexpected WebSocket error processing message: " + e.getMessage());
-      e.printStackTrace(System.err);
-      sendError(session, "An internal server error occurred: " + e.getClass().getSimpleName());
-    }
   }
 
   /**
