@@ -58,8 +58,9 @@ public class ChessClient {
                 if (isInGameActive()) {
                     System.err.println(EscapeSequences.SET_TEXT_COLOR_YELLOW
                             + "Returning to post-login state due to error." + EscapeSequences.RESET_TEXT_COLOR);
-                    if (inGameRepl != null)
+                    if (inGameRepl != null) {
                         inGameRepl.setInGame(false);
+                    }
                     currentJoinedGameID = null;
                 }
             }
@@ -120,8 +121,9 @@ public class ChessClient {
      * @throws Exception If creation fails or user not logged in.
      */
     public void createGame(String gameName) throws Exception {
-        if (!isLoggedIn())
+        if (!isLoggedIn()) {
             throw new Exception("You must be logged in to create a game.");
+        }
         HashMap<String, Object> response = serverFacade.createGame(authToken, gameName);
         Object gameIdObj = response.get("gameID");
 
@@ -143,8 +145,9 @@ public class ChessClient {
      */
     @SuppressWarnings("unchecked")
     public List<HashMap<String, Object>> listGames() throws Exception {
-        if (!isLoggedIn())
+        if (!isLoggedIn()) {
             throw new Exception("You must be logged in to list games.");
+        }
         HashMap<String, Object> response = serverFacade.listGames(authToken);
         Object gamesObj = response.get("games");
 
@@ -176,8 +179,9 @@ public class ChessClient {
      * @throws Exception If joining fails.
      */
     public void joinGame(int gameID, String color) throws Exception {
-        if (!isLoggedIn())
+        if (!isLoggedIn()) {
             throw new Exception("You must be logged in to join a game.");
+        }
         if (color == null || (!"WHITE".equalsIgnoreCase(color) && !"BLACK".equalsIgnoreCase(color))) {
             throw new IllegalArgumentException("Invalid color ('WHITE' or 'BLACK') specified for joining.");
         }
@@ -208,8 +212,9 @@ public class ChessClient {
      * @throws Exception If observing fails.
      */
     public void observeGame(int gameID) throws Exception {
-        if (!isLoggedIn())
+        if (!isLoggedIn()) {
             throw new Exception("You must be logged in to observe a game.");
+        }
         if (currentUser == null) {
             throw new Exception("Current user information missing.");
         }

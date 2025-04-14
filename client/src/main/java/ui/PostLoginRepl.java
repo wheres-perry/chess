@@ -41,8 +41,9 @@ public class PostLoginRepl {
             String line = scanner.nextLine().trim();
             System.out.print(EscapeSequences.RESET_TEXT_COLOR);
             String[] args = line.split("\\s+");
-            if (args.length == 0 || args[0].isEmpty())
+            if (args.length == 0 || args[0].isEmpty()) {
                 continue;
+            }
             String command = args[0].toLowerCase();
 
             try {

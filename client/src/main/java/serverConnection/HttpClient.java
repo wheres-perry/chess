@@ -152,8 +152,9 @@ public class HttpClient {
    * @throws IOException If an I/O error occurs.
    */
   private String streamToString(InputStream inputStream) throws IOException {
-    if (inputStream == null)
+    if (inputStream == null) {
       return "";
+    }
     StringBuilder textBuilder = new StringBuilder();
     try (Reader reader = new BufferedReader(
         new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {

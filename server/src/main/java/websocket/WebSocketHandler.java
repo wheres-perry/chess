@@ -116,8 +116,9 @@ public class WebSocketHandler {
    */
   private void handlePostMoveChecks(Integer gameID, ChessGame game) throws IOException {
     ChessGame.TeamColor currentTurn = game.getTeamTurn();
-    if (currentTurn == null)
+    if (currentTurn == null) {
       return;
+    }
     String notificationText = null;
     if (game.isInCheckmate(currentTurn)) {
       notificationText = String.format("Checkmate! %s wins.", currentTurn.not());
