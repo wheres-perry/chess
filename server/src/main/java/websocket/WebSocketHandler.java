@@ -151,39 +151,13 @@ public class WebSocketHandler {
     } else if (username.equals(gameData.blackUsername())) {
       updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
           gameData.game());
+      System.out.println("Updated game data: " + updatedGameData);
       gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
     }
     String notificationText = String.format("%s left the game.", username);
     NotificationMessage notificationMsg = new NotificationMessage(notificationText);
     clientManager.notifyMatch(command.getGameID(), username, notificationMsg);
     clientManager.unregister(username);
-  }
-
-  /**
-   * Handles a client request to resign from a game.
-   */
-  private void handleResign(Session session, ResignCommand command, AuthData authData)
-      throws DataAccessException, IOException {
-    GameData gameData = gameDAO.getGame(command.getGameID());
-    if (gameData == null) {
-      sendError(session, "Error: Game not found.");
-      return;
-    }
-    ChessGame game = gameData.game();
-    if (game.getTeamTurn() == null) {
-      sendError(session, "Error: Cannot resign, game is already over.");
-      return;
-    }
-    String username = authData.username();
-    if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
-      sendError(session, "Error: Observers cannot resign.");
-      return;
-    }
-    game.setTeamTurn(null);
-    gameDAO.updateGame(command.getGameID(), gameData);
-    String notificationText = String.format("%s resigned. The game is over.", username);
-    NotificationMessage notificationMsg = new NotificationMessage(notificationText);
-    clientManager.notifyMatch(command.getGameID(), null, notificationMsg);
   }
 
   /**

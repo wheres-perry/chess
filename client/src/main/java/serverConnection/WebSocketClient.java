@@ -209,47 +209,4 @@ public class WebSocketClient {
       }
     }
   }
-
-  /**
-   * Called by the WebSocket container when the connection is closed.
-   * 
-   * @param session     The session that is closing.
-   * @param closeReason Contains the close code and reason phrase.
-   */
-  @OnClose
-  public void onWebSocketClose(Session session, CloseReason closeReason) {
-    this.isConnected = false;
-    this.session = null; // Clear the session reference
-    String reason = closeReason.getReasonPhrase() != null && !closeReason.getReasonPhrase().isEmpty()
-        ? closeReason.getReasonPhrase()
-        : "No reason provided";
-    if (messageListener != null) {
-      if (closeReason.getCloseCode() != CloseReason.CloseCodes.NORMAL_CLOSURE) {
-        messageListener.onError("WebSocket connection closed unexpectedly: " + reason + " (Code: "
-            + closeReason.getCloseCode().getCode() + ")");
-      } else {
-        // WebSocket closed normally
-      }
-    }
-  }
-
-  /**
-   * Called by the WebSocket container when an error occurs.
-   * 
-   * @param session   The session where the error occurred (may be null).
-   * @param throwable The error that occurred.
-   */
-  @OnError
-  public void onWebSocketError(Session session, Throwable throwable) {
-    this.isConnected = false;
-    this.session = null;
-
-    String errorMsg = "WebSocket error: " + throwable.getMessage();
-    System.err.println(errorMsg + (session != null ? " on session " + session.getId() : ""));
-    throwable.printStackTrace();
-
-    if (messageListener != null) {
-      messageListener.onError(errorMsg);
-    }
-  }
 }
