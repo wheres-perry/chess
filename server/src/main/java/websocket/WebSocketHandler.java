@@ -191,35 +191,41 @@ public class WebSocketHandler {
    */
   private void handleDisconnect(Session session) {
     ClientLink removedLink = clientManager.unregisterBySession(session);
-    if (removedLink != null) {
-      String username = removedLink.participantName;
-      Integer gameID = removedLink.matchID;
-      if (gameID != null && username != null) {
-        try {
-          GameData gameData = gameDAO.getGame(gameID);
-          if (gameData != null) {
-            GameData updatedGameData = gameData;
-            if (username.equals(gameData.whiteUsername())) {
-              updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(),
-                  gameData.game());
-              gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-            } else if (username.equals(gameData.blackUsername())) {
-              updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
-                  gameData.game());
-              gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-            }
-            String notificationText = String.format("%s disconnected.", username);
-            NotificationMessage notificationMsg = new NotificationMessage(notificationText);
-            clientManager.notifyMatch(gameID, username, notificationMsg);
-          }
-        } catch (DataAccessException | IOException e) {
-          System.err.println(
-              "Error during disconnect handling for user " + username + " in game " + gameID + ": " + e.getMessage());
-          e.printStackTrace();
-        }
-      }
-    } else {
+    if (removedLink == null) {
       System.out.println("Disconnected session was not registered in ClientManager.");
+      return;
+    }
+    String username = removedLink.participantName;
+    Integer gameID = removedLink.matchID;
+    if (gameID == null || username == null) {
+      return;
+    }
+    handleDisconnectCleanup(username, gameID);
+  }
+
+  private void handleDisconnectCleanup(String username, Integer gameID) {
+    try {
+      GameData gameData = gameDAO.getGame(gameID);
+      if (gameData == null) {
+        return;
+      }
+      GameData updatedGameData = gameData;
+      if (username.equals(gameData.whiteUsername())) {
+        updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(),
+            gameData.game());
+        gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
+      } else if (username.equals(gameData.blackUsername())) {
+        updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
+            gameData.game());
+        gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
+      }
+      String notificationText = String.format("%s disconnected.", username);
+      NotificationMessage notificationMsg = new NotificationMessage(notificationText);
+      clientManager.notifyMatch(gameID, username, notificationMsg);
+    } catch (DataAccessException | IOException e) {
+      System.err.println(
+          "Error during disconnect handling for user " + username + " in game " + gameID + ": " + e.getMessage());
+      e.printStackTrace();
     }
   }
 
