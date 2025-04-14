@@ -32,7 +32,7 @@ public class ServerFacade {
 
     /**
      * Registers the listener that will receive WebSocket messages.
-     * 
+     *
      * @param listener The listener implementation (typically InGameRepl).
      */
     public void setWebSocketListener(WebSocketClient.WebSocketListener listener) {
@@ -41,7 +41,7 @@ public class ServerFacade {
 
     /**
      * Clears the server database via HTTP.
-     * 
+     *
      * @throws ServerFacadeException If the HTTP request fails.
      */
     public void clearDatabase() throws ServerFacadeException {
@@ -54,7 +54,7 @@ public class ServerFacade {
 
     /**
      * Registers a new user via HTTP.
-     * 
+     *
      * @return A HashMap containing the server's response (authToken, username).
      * @throws ServerFacadeException If the HTTP request fails.
      */
@@ -73,7 +73,7 @@ public class ServerFacade {
 
     /**
      * Logs in an existing user via HTTP.
-     * 
+     *
      * @return A HashMap containing the server's response (authToken, username).
      * @throws ServerFacadeException If the HTTP request fails.
      */
@@ -90,7 +90,7 @@ public class ServerFacade {
 
     /**
      * Logs out the current user via HTTP and disconnects WebSocket if active.
-     * 
+     *
      * @param authToken The authentication token of the user to log out.
      * @throws ServerFacadeException If the HTTP request fails.
      */
@@ -113,7 +113,7 @@ public class ServerFacade {
 
     /**
      * Lists all available games via HTTP.
-     * 
+     *
      * @param authToken The user's authentication token.
      * @return A HashMap containing the server's response ("games" list).
      * @throws ServerFacadeException If the HTTP request fails.
@@ -128,7 +128,7 @@ public class ServerFacade {
 
     /**
      * Creates a new game via HTTP.
-     * 
+     *
      * @param authToken The user's authentication token.
      * @param gameName  The desired name for the new game.
      * @return A HashMap containing the server's response ("gameID").
@@ -146,11 +146,12 @@ public class ServerFacade {
 
     /**
      * Joins an existing game: performs HTTP request then connects WebSocket.
-     * 
+     *
      * @param authToken   The user's authentication token.
      * @param gameID      The ID of the game to join.
      * @param playerColor The desired color ("WHITE" or "BLACK").
-     * @param username    The username joining (for WS connect).
+     * @param username    The username joining (needed for initial WS connect logic,
+     *                    though not sent directly)
      * @throws ServerFacadeException If the HTTP request or WebSocket connection
      *                               fails.
      */
@@ -163,68 +164,97 @@ public class ServerFacade {
                     && (playerColor.equalsIgnoreCase("WHITE") || playerColor.equalsIgnoreCase("BLACK"))) {
                 requestBody.put("playerColor", playerColor.toUpperCase());
             } else {
+                // Allow observing by not providing playerColor in HTTP, but need a different
+                // method/check?
+                // For joining as a player, color is required by the current logic.
+                // If the user only wants to observe, they should call observeGame.
                 throw new IllegalArgumentException("Player color (WHITE or BLACK) is required to join as player.");
             }
             httpClient.sendRequest("PUT", "/game", authToken, requestBody);
 
-            connectWebSocket(authToken, gameID, username);
+            // Connect WebSocket and send application-level connect command
+            connectWebSocketAndSendConnectCommand(authToken, gameID); // Pass only necessary info
+
         } catch (HttpClient.HttpException e) {
             throw new ServerFacadeException("HTTP request to join game failed: " + e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            throw new ServerFacadeException(e.getMessage(), e); // Propagate argument error
         } catch (Exception e) {
-            throw new ServerFacadeException("WebSocket connection failed after joining game: " + e.getMessage(), e);
+            throw new ServerFacadeException(
+                    "WebSocket connection or command failed after joining game: " + e.getMessage(), e);
         }
     }
 
     /**
      * Observes an existing game: performs HTTP request then connects WebSocket.
-     * 
+     * Note: The HTTP PUT /game request *without* playerColor signifies observation.
+     *
      * @param authToken The user's authentication token.
      * @param gameID    The ID of the game to observe.
-     * @param username  The username observing (for WS connect).
+     * @param username  The username observing (needed for initial WS connect logic,
+     *                  though not sent directly)
      * @throws ServerFacadeException If the HTTP request or WebSocket connection
      *                               fails.
      */
     public void observeGame(String authToken, int gameID, String username) throws ServerFacadeException {
         try {
+            // For observation, send PUT /game request *without* playerColor
             HashMap<String, Object> requestBody = new HashMap<>();
             requestBody.put("gameID", gameID);
+            // Do NOT add playerColor for observation via HTTP
             httpClient.sendRequest("PUT", "/game", authToken, requestBody);
 
-            connectWebSocket(authToken, gameID, username);
+            // Connect WebSocket and send application-level connect command
+            connectWebSocketAndSendConnectCommand(authToken, gameID); // Pass only necessary info
+
         } catch (HttpClient.HttpException e) {
             throw new ServerFacadeException("HTTP request to observe game failed: " + e.getMessage(), e);
         } catch (Exception e) {
-            throw new ServerFacadeException("WebSocket connection failed after observing game: " + e.getMessage(), e);
+            throw new ServerFacadeException(
+                    "WebSocket connection or command failed after observing game: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Helper to initialize and connect the WebSocket client.
-     * 
-     * @param authToken Auth token for WS connection.
-     * @param gameID    Game ID for WS connection.
-     * @param username  Username for WS connection.
-     * @throws Exception If connection fails.
+     * Helper to initialize, connect the WebSocket client, and send the
+     * application-level CONNECT command.
+     *
+     * @param authToken Auth token for WS connection command.
+     * @param gameID    Game ID for WS connection command.
+     * @throws Exception If connection or sending the command fails.
      */
-    private void connectWebSocket(String authToken, Integer gameID, String username) throws Exception {
+    private void connectWebSocketAndSendConnectCommand(String authToken, Integer gameID) throws Exception {
+        // Disconnect existing connection if any
         if (webSocketClient != null && webSocketClient.isConnected()) {
             try {
-                System.out.println("WebSocket already connected, disconnecting before reconnecting.");
+                System.out.println("[ServerFacade] WebSocket already connected, disconnecting before reconnecting.");
                 webSocketClient.disconnect();
             } catch (Exception e) {
                 System.err.println("Warning: Error disconnecting existing WebSocket: " + e.getMessage());
             }
         }
+        // Ensure listener is set
         if (this.webSocketListener == null) {
             throw new IllegalStateException("WebSocketListener must be set on ServerFacade before connecting.");
         }
+
+        // Create and connect the WebSocket client
         webSocketClient = new WebSocketClient(serverBaseUrl, this.webSocketListener);
-        webSocketClient.connect(authToken, gameID, username);
+        webSocketClient.connect(); // Establish the raw WebSocket connection (blocks until open or timeout)
+
+        // Check if connection was successful before sending command
+        if (!webSocketClient.isConnected()) {
+            throw new Exception("Failed to establish WebSocket connection.");
+        }
+
+        // Send the application-level CONNECT command
+        webSocketClient.sendConnect(authToken, gameID);
+        System.out.println("[ServerFacade] WebSocket CONNECT command sent for gameID: " + gameID);
     }
 
     /**
      * Sends a MAKE_MOVE command via WebSocket.
-     * 
+     *
      * @throws ServerFacadeException If WebSocket is not connected or send fails.
      */
     public void sendMakeMoveCommand(String authToken, Integer gameID, chess.ChessMove move)
@@ -241,28 +271,51 @@ public class ServerFacade {
 
     /**
      * Sends a LEAVE command via WebSocket.
-     * 
+     * Also disconnects the WebSocket connection after sending the command.
+     *
      * @throws ServerFacadeException If WebSocket is not connected or send fails.
      */
     public void sendLeaveCommand(String authToken, Integer gameID) throws ServerFacadeException {
         if (webSocketClient == null) {
             System.err.println(
-                    "Warning: Attempting to leave game, but WebSocket was never connected or already cleaned up.");
-            return;
+                    "[ServerFacade] Warning: Attempting to leave game, but WebSocket was never connected or already cleaned up.");
+            return; // Nothing to do if client wasn't even initialized
         }
         if (!webSocketClient.isConnected()) {
-            System.err.println("Warning: WebSocket not connected. Attempting to send leave anyway (might fail).");
+            // If not connected, we can't send the command, but we should ensure the client
+            // reference is cleared
+            System.err.println(
+                    "[ServerFacade] Warning: WebSocket not connected. Cannot send leave command. Cleaning up local reference.");
+            webSocketClient = null;
+            return;
         }
+
         try {
             webSocketClient.sendLeave(authToken, gameID);
+            System.out.println("[ServerFacade] LEAVE command sent for gameID: " + gameID);
         } catch (Exception e) {
-            System.err.println("Error sending Leave command: " + e.getMessage());
+            // Log the error, but proceed to disconnect attempt anyway
+            System.err.println("[ServerFacade] Error sending Leave command: " + e.getMessage());
+            // Don't re-throw yet, try to disconnect
+        } finally {
+            // Attempt to disconnect the WebSocket after sending leave, regardless of send
+            // success
+            try {
+                if (webSocketClient != null && webSocketClient.isConnected()) {
+                    webSocketClient.disconnect();
+                    System.out.println("[ServerFacade] WebSocket disconnected after sending leave.");
+                }
+            } catch (Exception disconnectEx) {
+                System.err.println("[ServerFacade] Error disconnecting WebSocket after sending leave: "
+                        + disconnectEx.getMessage());
+            }
+            webSocketClient = null; // Clear the reference after attempting disconnect
         }
     }
 
     /**
      * Sends a RESIGN command via WebSocket.
-     * 
+     *
      * @throws ServerFacadeException If WebSocket is not connected or send fails.
      */
     public void sendResignCommand(String authToken, Integer gameID) throws ServerFacadeException {
