@@ -11,8 +11,8 @@ import service.ChessService;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import webSocketMessages.Action;
-import webSocketMessages.Notification;
+import websocket.messages.*;
+import websocket.commands.*;
 
 import java.io.IOException;
 import java.util.Timer;

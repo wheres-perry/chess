@@ -1,7 +1,6 @@
 package websocket;
 
 import org.eclipse.jetty.websocket.api.Session;
-import webSocketMessages.Notification;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class ConnectionManager {
     connections.remove(visitorName);
   }
 
-  public void broadcast(String excludeVisitorName, Notification notification) throws IOException {
+  public void broadcast(String excludeVisitorName, Object notification) throws IOException {
     var removeList = new ArrayList<Connection>();
     for (var c : connections.values()) {
       if (c.session.isOpen()) {

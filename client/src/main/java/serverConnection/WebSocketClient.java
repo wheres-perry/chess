@@ -34,6 +34,9 @@ public class WebSocketClient {
     System.out.println("WebSocket Client Initialized for URL (dummy): " + this.serverUrl);
   }
 
+  /**
+   * Interface for components that need to react to WebSocket messages.
+   */
   public interface WebSocketListener {
     void onMessageReceived(ServerMessage message);
 
