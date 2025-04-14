@@ -1,35 +1,34 @@
 package serverConnection;
 
-import chess.ChessMove; // Added import
+import chess.ChessMove;
 import com.google.gson.Gson;
 import websocket.commands.*;
 import websocket.messages.*;
 
 import javax.websocket.*;
 import java.net.URI;
-import java.util.concurrent.CountDownLatch; // Added import
-import java.util.concurrent.TimeUnit; // Added import
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages the WebSocket connection for the chess client.
  * Handles sending UserGameCommands and receiving ServerMessages.
  * Uses the Tyrus JSR 356 WebSocket client implementation.
  */
-@ClientEndpoint // Marks this class as a WebSocket endpoint
+@ClientEndpoint
 public class WebSocketClient {
 
-  private final String serverUri; // Renamed from serverUrl for clarity with URI object
+  private final String serverUri;
   private WebSocketListener messageListener;
   private final Gson gson = new Gson();
-  private Session session; // WebSocket session
+  private Session session;
   private boolean isConnected = false;
-  private final CountDownLatch connectionLatch = new CountDownLatch(1); // For connect synchronization
+  private final CountDownLatch connectionLatch = new CountDownLatch(1);
 
   public WebSocketClient(String serverUrl, WebSocketListener listener) {
-    // Ensure the URL starts with ws:// or wss://
+
     String wsUrl = serverUrl.replaceFirst("^http", "ws");
     if (!wsUrl.endsWith("/ws")) {
-      // Ensure the path is correct, handle cases with or without trailing slash
       if (wsUrl.endsWith("/")) {
         wsUrl += "ws";
       } else {
@@ -38,7 +37,6 @@ public class WebSocketClient {
     }
     this.serverUri = wsUrl;
     this.messageListener = listener;
-    System.out.println("WebSocket Client Initialized for URI: " + this.serverUri);
   }
 
   /**
@@ -61,23 +59,16 @@ public class WebSocketClient {
    */
   public void connect() throws Exception {
     if (isConnected) {
-      System.out.println("[WebSocketClient] Already connected.");
       return;
     }
     try {
       WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-      System.out.println("[WebSocketClient] Attempting to connect to: " + serverUri);
-      // Pass 'this' instance so Tyrus uses the annotated methods (@OnOpen, @OnMessage
-      // etc.)
       this.session = container.connectToServer(this, URI.create(serverUri));
 
-      // Wait briefly for the @OnOpen callback to fire and set isConnected
-      // This helps ensure the connection state is updated before returning
-      boolean connected = connectionLatch.await(5, TimeUnit.SECONDS); // Wait up to 5 seconds
+      boolean connected = connectionLatch.await(5, TimeUnit.SECONDS);
       if (!connected || !this.isConnected) {
         throw new Exception("WebSocket connection timed out or failed to open.");
       }
-      System.out.println("[WebSocketClient] Connection seems established.");
 
     } catch (DeploymentException e) {
       throw new Exception("Failed to deploy WebSocket endpoint: " + e.getMessage() + " | URI: " + serverUri, e);
@@ -94,24 +85,19 @@ public class WebSocketClient {
   public void disconnect() throws Exception {
     if (session != null && session.isOpen()) {
       try {
-        // Use a specific close code and reason if desired
         session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Client disconnecting normally."));
-        System.out.println("[WebSocketClient] Disconnect requested.");
       } catch (Exception e) {
         throw new Exception("Failed to disconnect WebSocket: " + e.getMessage(), e);
       } finally {
-        // Ensure state is updated even if close throws an error locally
         this.session = null;
         this.isConnected = false;
       }
     } else {
-      System.out.println("[WebSocketClient] Already disconnected or session is null.");
-      this.isConnected = false; // Ensure state is correct
+      this.isConnected = false;
     }
   }
 
   public boolean isConnected() {
-    // Also check session state just in case the flag is stale
     return isConnected && session != null && session.isOpen();
   }
 
@@ -123,7 +109,7 @@ public class WebSocketClient {
    * @throws Exception If not connected or if sending fails.
    */
   public void sendCommand(UserGameCommand command) throws Exception {
-    if (!isConnected()) { // Use the isConnected() method for reliability
+    if (!isConnected()) {
       throw new Exception("Not connected to WebSocket server.");
     }
     if (session == null) {
@@ -131,10 +117,8 @@ public class WebSocketClient {
     }
     try {
       String jsonCommand = gson.toJson(command);
-      System.out.println("[WebSocketClient] Sending command: " + jsonCommand); // Log the command being sent
       session.getBasicRemote().sendText(jsonCommand);
     } catch (Exception e) {
-      // If send fails, the connection might be broken. Update state.
       this.isConnected = false;
       this.session = null;
       throw new Exception("Failed to send command via WebSocket: " + e.getMessage(), e);
@@ -144,8 +128,6 @@ public class WebSocketClient {
   // --- Command Sending Helper Methods ---
 
   public void sendConnect(String authToken, Integer gameID) throws Exception {
-    // Note: The actual WebSocket connection is established by connect().
-    // This sends the *application-level* connect command after the WS is open.
     sendCommand(new ConnectCommand(authToken, gameID));
   }
 
@@ -155,19 +137,11 @@ public class WebSocketClient {
 
   public void sendLeave(String authToken, Integer gameID) throws Exception {
     sendCommand(new LeaveCommand(authToken, gameID));
-    // Consider disconnecting the websocket *after* sending leave?
-    // Or let the server handle the disconnect notification?
-    // Current server logic seems to expect the client might stay connected briefly.
-    // Let's add a disconnect after sending leave for cleaner client state
-    // management.
-    // disconnect(); // Optional: Disconnect immediately after sending leave
   }
 
   public void sendResign(String authToken, Integer gameID) throws Exception {
     sendCommand(new ResignCommand(authToken, gameID));
   }
-
-  // --- WebSocket Lifecycle Callback Methods (Annotated for Tyrus) ---
 
   /**
    * Called by the WebSocket container when the connection is successfully opened.
@@ -178,8 +152,7 @@ public class WebSocketClient {
   public void onWebSocketOpen(Session session) {
     this.session = session;
     this.isConnected = true;
-    System.out.println("[WebSocketClient] Connection opened. Session ID: " + session.getId());
-    connectionLatch.countDown(); // Signal that connection is open
+    connectionLatch.countDown();
   }
 
   /**
@@ -191,13 +164,9 @@ public class WebSocketClient {
   @OnMessage
   public void onWebSocketMessage(String message, Session session) {
     try {
-      // Log raw message first for debugging
-      System.out.println("[WebSocketClient] Raw message received: " + message);
 
-      // Determine message type
       ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
 
-      // Deserialize to specific type based on the determined type
       ServerMessage specificMessage;
       switch (serverMessage.getServerMessageType()) {
         case LOAD_GAME:
@@ -210,35 +179,31 @@ public class WebSocketClient {
           specificMessage = gson.fromJson(message, NotificationMessage.class);
           break;
         default:
-          // Handle unknown type gracefully
           String errorMsg = "Unknown server message type received: " + serverMessage.getServerMessageType();
-          System.err.println("[WebSocketClient] " + errorMsg);
+          System.err.println(errorMsg);
           if (messageListener != null) {
-            // Send a generic error or a custom message indicating unknown type
+
             messageListener.onError(errorMsg + " | Raw: " + message);
           }
-          return; // Don't process further
+          return;
       }
 
-      // Pass the correctly deserialized message to the listener
       if (messageListener != null) {
         messageListener.onMessageReceived(specificMessage);
       } else {
-        System.err.println("[WebSocketClient] No message listener registered to handle message!");
+        System.err.println("No message listener registered to handle message!");
       }
     } catch (com.google.gson.JsonSyntaxException jsonEx) {
-      // Handle cases where the message isn't valid JSON or doesn't match expected
-      // structures
+      // Handle cases where the message isn't valid JSON
       String errorMsg = "Failed to parse server message JSON: " + jsonEx.getMessage() + " | Raw message: " + message;
-      System.err.println("[WebSocketClient] " + errorMsg);
+      System.err.println(errorMsg);
       if (messageListener != null) {
         messageListener.onError(errorMsg);
       }
     } catch (Exception e) {
-      // Catch any other unexpected errors during message processing
       String errorMsg = "Failed to process server message: " + e.getMessage() + " | Raw message: " + message;
-      System.err.println("[WebSocketClient] " + errorMsg);
-      e.printStackTrace(); // Log stack trace for debugging
+      System.err.println(errorMsg);
+      e.printStackTrace();
       if (messageListener != null) {
         messageListener.onError(errorMsg);
       }
@@ -258,20 +223,12 @@ public class WebSocketClient {
     String reason = closeReason.getReasonPhrase() != null && !closeReason.getReasonPhrase().isEmpty()
         ? closeReason.getReasonPhrase()
         : "No reason provided";
-    System.out.println(
-        "[WebSocketClient] Connection closed. Code: " + closeReason.getCloseCode().getCode() + ", Reason: " + reason);
-
-    // Notify listener about the closure, potentially as an error or distinct event
     if (messageListener != null) {
-      // Send a generic error message indicating closure
       if (closeReason.getCloseCode() != CloseReason.CloseCodes.NORMAL_CLOSURE) {
         messageListener.onError("WebSocket connection closed unexpectedly: " + reason + " (Code: "
             + closeReason.getCloseCode().getCode() + ")");
       } else {
-        // Optionally notify normal closure differently if needed
-        System.out.println("[WebSocketClient] Normal closure initiated.");
-        // messageListener.onConnectionClosedNormally(); // If you add such a method to
-        // the listener
+        // WebSocket closed normally
       }
     }
   }
@@ -284,15 +241,13 @@ public class WebSocketClient {
    */
   @OnError
   public void onWebSocketError(Session session, Throwable throwable) {
-    // Error might mean connection is lost or will be closed
     this.isConnected = false;
-    this.session = null; // Clear session as it might be unusable
+    this.session = null;
 
     String errorMsg = "WebSocket error: " + throwable.getMessage();
-    System.err.println("[WebSocketClient] " + errorMsg + (session != null ? " on session " + session.getId() : ""));
-    throwable.printStackTrace(); // Log the full stack trace
+    System.err.println(errorMsg + (session != null ? " on session " + session.getId() : ""));
+    throwable.printStackTrace();
 
-    // Notify the listener
     if (messageListener != null) {
       messageListener.onError(errorMsg);
     }
