@@ -115,25 +115,4 @@ public class ClientManager {
       unregisterBySession(link.matchSession);
     }
   }
-
-  /**
-   * Sends a message directly to a specific participant if they are connected.
-   * 
-   * @param participant The target username.
-   * @param msg         The message to send.
-   * @throws IOException If the user is found but sending fails.
-   */
-  public void notifyUser(String participant, ServerMessage msg) throws IOException {
-    ClientLink link = userLinks.get(participant);
-    if (link != null && link.matchSession.isOpen()) {
-      String json = serializer.toJson(msg);
-      System.out.println("[ClientManager] Sending direct message to " + participant + ": " + json);
-      link.transmit(json);
-    } else if (link != null) {
-      System.err.println("[ClientManager] Attempted to notify " + participant + " but session is closed.");
-      unregister(participant);
-    } else {
-      System.err.println("[ClientManager] Attempted to notify " + participant + " but user link not found.");
-    }
-  }
 }
