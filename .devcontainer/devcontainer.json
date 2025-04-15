@@ -11,5 +11,8 @@
             ]
         }
     },
-    "forwardPorts": [3306]
+    "forwardPorts": [
+        3306
+    ],
+    "postCreateCommand": "git config --global --add safe.directory /workspaces/chess"
 }

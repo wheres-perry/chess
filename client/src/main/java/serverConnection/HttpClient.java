@@ -2,7 +2,6 @@ package serverconnection;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import ui.EscapeSequences;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -82,65 +81,32 @@ public class HttpClient {
   private HashMap<String, Object> handleHttpResponse(HttpURLConnection http) throws HttpException {
     try {
       int responseCode = http.getResponseCode();
+      InputStream respStream;
+      if (responseCode >= 200 && responseCode < 300) {
+        respStream = http.getInputStream();
+      } else {
+        respStream = http.getErrorStream();
+      }
+
+      String respData = "";
+      if (respStream != null) {
+        respData = streamToString(respStream);
+      }
 
       if (responseCode >= 200 && responseCode < 300) {
-        try (InputStream respBody = http.getInputStream()) {
-          if (respBody == null || http.getContentLength() == 0) {
-            return new HashMap<>();
-          }
-          String respData = streamToString(respBody);
-          if (respData.isEmpty() || respData.equals("{}")) {
-            return new HashMap<>();
-          }
-          try {
-            HashMap<String, Object> result = JSON.fromJson(respData, MAPTYPE);
-            return (result != null) ? result : new HashMap<>();
-          } catch (com.google.gson.JsonSyntaxException e) {
-            throw new HttpException("Failed to parse successful HTTP server response JSON: " + e.getMessage()
-                + "\nResponse Data: " + respData, e);
-          }
-        } catch (IOException e) {
-          System.err.println(EscapeSequences.SET_TEXT_COLOR_YELLOW
-              + "Warning: IOException reading HTTP response body for success status " + responseCode
-              + ": " + e.getMessage() + EscapeSequences.RESET_TEXT_COLOR);
+        if (respData.isEmpty() || respData.equals("{}")) {
           return new HashMap<>();
         }
-      } else {
-        String errorMessage;
-        try (InputStream errorStream = http.getErrorStream()) {
-          String errorBody = "";
-          if (errorStream != null) {
-            errorBody = streamToString(errorStream);
-          }
-
-          if (errorBody.isEmpty()) {
-            errorMessage = http.getResponseMessage();
-            if (errorMessage == null || errorMessage.trim().isEmpty()) {
-              errorMessage = "Unknown server error (Code: " + responseCode + ")";
-            }
-          } else {
-            try {
-              Map<String, Object> errorJson = JSON.fromJson(errorBody, MAPTYPE);
-              if (errorJson != null && errorJson.containsKey("message")) {
-                errorMessage = (String) errorJson.get("message");
-              } else {
-                System.err.println("Received unexpected error format from server. Using raw body.");
-                errorMessage = errorBody;
-              }
-            } catch (com.google.gson.JsonSyntaxException jsonEx) {
-              System.err.println("Received non-JSON error body from server. Using raw body.");
-              errorMessage = errorBody;
-            }
-          }
-        } catch (IOException ioEx) {
-          System.err.println("Fatal error processing server HTTP error response. Using default message.");
-          errorMessage = "Failed to read error stream (Code: " + responseCode + ")";
-          ioEx.printStackTrace();
+        HashMap<String, Object> result = JSON.fromJson(respData, MAPTYPE);
+        if (result == null) {
+          return new HashMap<>();
         }
-        throw new HttpException("Server returned error: " + responseCode + " - " + errorMessage);
+        return result;
+      } else {
+        throw new HttpException("Request failed");
       }
-    } catch (IOException e) {
-      throw new HttpException("Failed to get HTTP response from server: " + e.getMessage(), e);
+    } catch (Exception e) {
+      throw new HttpException("Request failed");
     }
   }
 
