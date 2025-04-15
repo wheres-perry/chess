@@ -9,7 +9,10 @@ import dataaccess.interfaces.GameDAO;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
 import websocket.messages.*;
@@ -23,6 +26,7 @@ import java.io.IOException;
 @WebSocket
 public class WebSocketHandler {
 
+  private final AuthDAO authDAO;
   private final GameDAO gameDAO;
   private final ClientManager clientManager = new ClientManager();
   private final Gson serializer = new Gson();
@@ -31,6 +35,7 @@ public class WebSocketHandler {
    * Constructs a WebSocketHandler with the given DAOs.
    */
   public WebSocketHandler(AuthDAO authDAO, GameDAO gameDAO) {
+    this.authDAO = authDAO;
     this.gameDAO = gameDAO;
   }
 
@@ -40,6 +45,73 @@ public class WebSocketHandler {
   @OnWebSocketConnect
   public void onConnect(Session session) {
     System.out.println("WebSocket connected: " + session.getRemoteAddress());
+  }
+
+  /**
+   * Called when a WebSocket connection is closed.
+   */
+  @OnWebSocketClose
+  public void onClose(Session session, int statusCode, String reason) {
+    System.out
+        .println("WebSocket closed: " + session.getRemoteAddress() + " Code: " + statusCode + " Reason: " + reason);
+    handleDisconnect(session);
+  }
+
+  /**
+   * Called when a WebSocket error occurs.
+   */
+  @OnWebSocketError
+  public void onError(Session session, Throwable throwable) {
+    System.err.println("WebSocket error on session " + session.getRemoteAddress() + ": " + throwable.getMessage());
+    throwable.printStackTrace(System.err);
+    handleDisconnect(session);
+  }
+
+  /**
+   * Called when a message is received from a client.
+   * Parses the message and dispatches it to the appropriate handler.
+   */
+  @OnWebSocketMessage
+  public void onMessage(Session session, String message) throws IOException {
+    AuthData authData = null;
+    try {
+      UserGameCommand baseCommand = serializer.fromJson(message, UserGameCommand.class);
+      String authToken = baseCommand.getAuthToken();
+      authData = authDAO.getAuth(authToken);
+      if (authData == null) {
+        sendError(session, "Unauthorized - Invalid or missing authToken.");
+        return;
+      }
+      switch (baseCommand.getCommandType()) {
+        case CONNECT:
+          ConnectCommand connectCmd = serializer.fromJson(message, ConnectCommand.class);
+          handleConnect(session, connectCmd, authData);
+          break;
+        case MAKE_MOVE:
+          MakeMoveCommand moveCmd = serializer.fromJson(message, MakeMoveCommand.class);
+          handleMakeMove(session, moveCmd, authData);
+          break;
+        case LEAVE:
+          LeaveCommand leaveCmd = serializer.fromJson(message, LeaveCommand.class);
+          handleLeave(session, leaveCmd, authData);
+          break;
+        case RESIGN:
+          ResignCommand resignCmd = serializer.fromJson(message, ResignCommand.class);
+          handleResign(session, resignCmd, authData);
+          break;
+        default:
+          sendError(session, "Unknown command type: " + baseCommand.getCommandType());
+          break;
+      }
+    } catch (com.google.gson.JsonSyntaxException ex) {
+      sendError(session, "Invalid command format: " + ex.getMessage());
+    } catch (DataAccessException e) {
+      sendError(session, "Data access error: " + e.getMessage());
+    } catch (Exception e) {
+      System.err.println("Unexpected WebSocket error processing message: " + e.getMessage());
+      e.printStackTrace(System.err);
+      sendError(session, "An internal server error occurred: " + e.getClass().getSimpleName());
+    }
   }
 
   /**
@@ -116,9 +188,8 @@ public class WebSocketHandler {
    */
   private void handlePostMoveChecks(Integer gameID, ChessGame game) throws IOException {
     ChessGame.TeamColor currentTurn = game.getTeamTurn();
-    if (currentTurn == null) {
+    if (currentTurn == null)
       return;
-    }
     String notificationText = null;
     if (game.isInCheckmate(currentTurn)) {
       notificationText = String.format("Checkmate! %s wins.", currentTurn.not());
@@ -152,7 +223,6 @@ public class WebSocketHandler {
     } else if (username.equals(gameData.blackUsername())) {
       updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
           gameData.game());
-      System.out.println("Updated game data: " + updatedGameData);
       gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
     }
     String notificationText = String.format("%s left the game.", username);
@@ -162,45 +232,66 @@ public class WebSocketHandler {
   }
 
   /**
+   * Handles a client request to resign from a game.
+   */
+  private void handleResign(Session session, ResignCommand command, AuthData authData)
+      throws DataAccessException, IOException {
+    GameData gameData = gameDAO.getGame(command.getGameID());
+    if (gameData == null) {
+      sendError(session, "Error: Game not found.");
+      return;
+    }
+    ChessGame game = gameData.game();
+    if (game.getTeamTurn() == null) {
+      sendError(session, "Error: Cannot resign, game is already over.");
+      return;
+    }
+    String username = authData.username();
+    if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+      sendError(session, "Error: Observers cannot resign.");
+      return;
+    }
+    game.setTeamTurn(null);
+    gameDAO.updateGame(command.getGameID(), gameData);
+    String notificationText = String.format("%s resigned. The game is over.", username);
+    NotificationMessage notificationMsg = new NotificationMessage(notificationText);
+    clientManager.notifyMatch(command.getGameID(), null, notificationMsg);
+  }
+
+  /**
    * Handles cleanup and notifications when a client disconnects.
    */
   private void handleDisconnect(Session session) {
     ClientLink removedLink = clientManager.unregisterBySession(session);
-    if (removedLink == null) {
+    if (removedLink != null) {
+      String username = removedLink.participantName;
+      Integer gameID = removedLink.matchID;
+      if (gameID != null && username != null) {
+        try {
+          GameData gameData = gameDAO.getGame(gameID);
+          if (gameData != null) {
+            GameData updatedGameData = gameData;
+            if (username.equals(gameData.whiteUsername())) {
+              updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(),
+                  gameData.game());
+              gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
+            } else if (username.equals(gameData.blackUsername())) {
+              updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
+                  gameData.game());
+              gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
+            }
+            String notificationText = String.format("%s disconnected.", username);
+            NotificationMessage notificationMsg = new NotificationMessage(notificationText);
+            clientManager.notifyMatch(gameID, username, notificationMsg);
+          }
+        } catch (DataAccessException | IOException e) {
+          System.err.println(
+              "Error during disconnect handling for user " + username + " in game " + gameID + ": " + e.getMessage());
+          e.printStackTrace();
+        }
+      }
+    } else {
       System.out.println("Disconnected session was not registered in ClientManager.");
-      return;
-    }
-    String username = removedLink.participantName;
-    Integer gameID = removedLink.matchID;
-    if (gameID == null || username == null) {
-      return;
-    }
-    handleDisconnectCleanup(username, gameID);
-  }
-
-  private void handleDisconnectCleanup(String username, Integer gameID) {
-    try {
-      GameData gameData = gameDAO.getGame(gameID);
-      if (gameData == null) {
-        return;
-      }
-      GameData updatedGameData = gameData;
-      if (username.equals(gameData.whiteUsername())) {
-        updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(),
-            gameData.game());
-        gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-      } else if (username.equals(gameData.blackUsername())) {
-        updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(),
-            gameData.game());
-        gameDAO.updateGame(updatedGameData.gameID(), updatedGameData);
-      }
-      String notificationText = String.format("%s disconnected.", username);
-      NotificationMessage notificationMsg = new NotificationMessage(notificationText);
-      clientManager.notifyMatch(gameID, username, notificationMsg);
-    } catch (DataAccessException | IOException e) {
-      System.err.println(
-          "Error during disconnect handling for user " + username + " in game " + gameID + ": " + e.getMessage());
-      e.printStackTrace();
     }
   }
 
