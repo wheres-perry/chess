@@ -10,7 +10,6 @@ import connection.WebSocketClient;
 
 import java.util.HashMap;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Server Facade Integration Tests (Coverage Simulation - Pass Focused)")
@@ -85,14 +84,16 @@ class ServerFacadeTests {
         altPassword = "password";
         altEmail = "alt_" + uniqueSuffix + "@example.com";
         System.out.println("Generated test users: " + testUsername + ", " + altUsername);
-        if (testListener != null)
+        if (testListener != null) {
             testListener.clear();
+        }
         System.out.println("--- Finished @BeforeEach ---");
     }
 
     private HashMap<String, Object> registerAndLoginMainUser() {
-        if (facade == null)
+        if (facade == null) {
             return null;
+        }
         try {
             facade.register(testUsername, testPassword, testEmail);
             try {
@@ -115,8 +116,9 @@ class ServerFacadeTests {
     }
 
     private HashMap<String, Object> registerAndLoginAltUser() {
-        if (facade == null)
+        if (facade == null) {
             return null;
+        }
         try {
             facade.register(altUsername, altPassword, altEmail);
             try {
@@ -139,8 +141,9 @@ class ServerFacadeTests {
     }
 
     private Integer createGameAsMainUser(String authToken) {
-        if (facade == null || authToken == null)
+        if (facade == null || authToken == null) {
             return null;
+        }
         try {
             String gameName = "game_" + UUID.randomUUID().toString().substring(0, 6);
             HashMap<String, Object> response = facade.createGame(authToken, gameName);
@@ -169,146 +172,158 @@ class ServerFacadeTests {
 
     @Test
     @DisplayName("Clear Database (Simulated +)")
-    void clearDatabase_PositiveFunctional() {
+    void clearDatabasePositiveFunctional() {
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.clearDatabase();
+                }
             } catch (Exception e) {
-                System.err.println("Swallowed exception in clearDatabase_PositiveFunctional: " + e.getMessage());
+                System.err.println("Swallowed exception in clearDatabasePositiveFunctional: " + e.getMessage());
             }
         }, "clearDatabase call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Register User (Simulated +)")
-    void register_Positive() {
+    void registerPositive() {
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.register(testUsername, testPassword, testEmail);
+                }
             } catch (Exception e) {
-                System.err.println("Swallowed exception in register_Positive: " + e.getMessage());
+                System.err.println("Swallowed exception in registerPositive: " + e.getMessage());
             }
         }, "Registering call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Register User (-) Already Exists")
-    void register_Negative_UserExists() {
+    void registerNegativeUserExists() {
         try {
-            if (facade != null)
+            if (facade != null) {
                 facade.register(testUsername, testPassword, testEmail);
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in register_Negative_UserExists: " + e.getMessage());
+            System.err.println("Swallowed setup exception in registerNegativeUserExists: " + e.getMessage());
         }
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.register(testUsername, testPassword, testEmail);
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Registering an existing user should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Register User (-) Bad Data")
-    void register_Negative_BadData() {
+    void registerNegativeBadData() {
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.register(null, "pw", "email@bad.com");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Registering with null username should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Login User (Simulated +)")
-    void login_Positive() {
+    void loginPositive() {
         try {
-            if (facade != null)
+            if (facade != null) {
                 facade.register(testUsername, testPassword, testEmail);
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in login_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in loginPositive: " + e.getMessage());
         }
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.login(testUsername, testPassword);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in login_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in loginPositive action: " + ex.getMessage());
             }
         }, "Login call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Login User (-) Wrong Password")
-    void login_Negative_WrongPassword() {
+    void loginNegativeWrongPassword() {
         try {
-            if (facade != null)
+            if (facade != null) {
                 facade.register(testUsername, testPassword, testEmail);
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in login_Negative_WrongPassword: " + e.getMessage());
+            System.err.println("Swallowed setup exception in loginNegativeWrongPassword: " + e.getMessage());
         }
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.login(testUsername, "wrongPassword");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Login with incorrect password should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Login User (-) Non-Existent User")
-    void login_Negative_UserNotFound() {
+    void loginNegativeUserNotFound() {
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.login("nonExistentUser_" + UUID.randomUUID(), "password");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Login with a non-existent user should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Create Game (Simulated +)")
-    void createGame_Positive() {
+    void createGamePositive() {
         String authToken = "dummyToken";
         try {
             HashMap<String, Object> authData = registerAndLoginMainUser();
             if (authData != null && authData.containsKey("authToken")) {
                 authToken = (String) authData.get("authToken");
             } else {
-                System.err.println("Setup failed in createGame_Positive, using dummy token...");
+                System.err.println("Setup failed in createGamePositive, using dummy token...");
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in createGame_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in createGamePositive: " + e.getMessage());
         }
 
         final String finalAuthToken = authToken;
         assertDoesNotThrow(() -> {
             try {
                 String gameName = "testGame_" + UUID.randomUUID().toString().substring(0, 6);
-                if (facade != null)
+                if (facade != null) {
                     facade.createGame(finalAuthToken, gameName);
+                }
             } catch (Exception e) {
-                System.err.println("Swallowed exception in createGame_Positive action: " + e.getMessage());
+                System.err.println("Swallowed exception in createGamePositive action: " + e.getMessage());
             }
         }, "Creating game call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Create Game (-) Invalid Token")
-    void createGame_Negative_InvalidToken() {
+    void createGameNegativeInvalidToken() {
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.createGame("invalidToken", "badGame");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Creating a game with an invalid token should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("List Games (Simulated +)")
-    void listGames_Positive() {
+    void listGamesPositive() {
         String authToken = "dummyToken";
         try {
             HashMap<String, Object> authData = registerAndLoginMainUser();
@@ -316,37 +331,39 @@ class ServerFacadeTests {
                 authToken = (String) authData.get("authToken");
                 createGameAsMainUser(authToken);
             } else {
-                System.err.println("Setup failed in listGames_Positive, using dummy token...");
+                System.err.println("Setup failed in listGamesPositive, using dummy token...");
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in listGames_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in listGamesPositive: " + e.getMessage());
         }
 
         final String finalAuthToken = authToken;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.listGames(finalAuthToken);
+                }
             } catch (Exception e) {
-                System.err.println("Swallowed exception in listGames_Positive action: " + e.getMessage());
+                System.err.println("Swallowed exception in listGamesPositive action: " + e.getMessage());
             }
         }, "Listing games call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("List Games (-) Invalid Token")
-    void listGames_Negative_InvalidToken() {
+    void listGamesNegativeInvalidToken() {
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.listGames("invalidToken");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Listing games with an invalid token should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Join Game (Simulated +)")
-    void joinGame_Positive() {
+    void joinGamePositive() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -354,81 +371,87 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
             }
             if (altAuthToken.equals("dummyAltToken") || gameId == 1) {
-                System.err.println("Setup failed in joinGame_Positive, using dummy data...");
+                System.err.println("Setup failed in joinGamePositive, using dummy data...");
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in joinGame_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in joinGamePositive: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.joinGame(finalAltAuthToken, finalGameId, "WHITE", altUsername);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in joinGame_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in joinGamePositive action: " + ex.getMessage());
             }
         }, "Joining game call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Join Game (-) Invalid Token")
-    void joinGame_Negative_InvalidToken() {
+    void joinGameNegativeInvalidToken() {
         Integer gameId = 1;
         try {
             HashMap<String, Object> mainAuthData = registerAndLoginMainUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
-                else
-                    System.err.println("Setup failed in joinGame_Negative_InvalidToken, using dummy gameId");
+                } else {
+                    System.err.println("Setup failed in joinGameNegativeInvalidToken, using dummy gameId");
+                }
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in joinGame_Negative_InvalidToken: " + e.getMessage());
+            System.err.println("Swallowed setup exception in joinGameNegativeInvalidToken: " + e.getMessage());
         }
         final Integer finalGameId = gameId;
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.joinGame("invalidToken", finalGameId, "BLACK", "badUser");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Joining a game with an invalid token should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Join Game (-) Invalid Game ID")
-    void joinGame_Negative_InvalidGameId() {
+    void joinGameNegativeInvalidGameId() {
         String altAuthToken = "dummyAltToken";
         try {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in joinGame_Negative_InvalidGameId, using dummy token");
+            } else {
+                System.err.println("Setup failed in joinGameNegativeInvalidGameId, using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in joinGame_Negative_InvalidGameId: " + e.getMessage());
+            System.err.println("Swallowed setup exception in joinGameNegativeInvalidGameId: " + e.getMessage());
         }
         final String finalAltAuthToken = altAuthToken;
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.joinGame(finalAltAuthToken, -999, "WHITE", altUsername);
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Joining a non-existent game should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Join Game (-) Missing Color")
-    void joinGame_Negative_MissingColor() {
+    void joinGameNegativeMissingColor() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -436,34 +459,37 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
-                else
-                    System.err.println(
-                            "Setup failed in joinGame_Negative_MissingColor (create game), using dummy gameId");
+                } else {
+                    System.err
+                            .println("Setup failed in joinGameNegativeMissingColor (create game), using dummy gameId");
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in joinGame_Negative_MissingColor (alt login), using dummy token");
+            } else {
+                System.err.println("Setup failed in joinGameNegativeMissingColor (alt login), using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in joinGame_Negative_MissingColor: " + e.getMessage());
+            System.err.println("Swallowed setup exception in joinGameNegativeMissingColor: " + e.getMessage());
         }
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.joinGame(finalAltAuthToken, finalGameId, null, altUsername);
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Joining a game without specifying color should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Join Game (-) Listener Not Set (Simulated)")
-    void joinGame_Negative_NoListener_Simulated() {
+    void joinGameNegativeNoListenerSimulated() {
         if (facade == null) {
-            System.err.println("Skipping joinGame_Negative_NoListener_Simulated: Facade not initialized.");
+            System.err.println("Skipping joinGameNegativeNoListenerSimulated: Facade not initialized.");
             Assumptions.assumeTrue(false, "Facade not initialized");
         }
         facade.setWebSocketListener(null);
@@ -475,35 +501,34 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
-                else
-                    System.err
-                            .println("Setup failed in joinGame_Negative_NoListener (create game), using dummy gameId");
+                } else {
+                    System.err.println(
+                            "Setup failed in joinGameNegativeNoListenerSimulated (create game), using dummy gameId");
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in joinGame_Negative_NoListener (alt login), using dummy token");
-
+            } else {
+                System.err
+                        .println("Setup failed in joinGameNegativeNoListenerSimulated (alt login), using dummy token");
+            }
         } catch (Exception e) {
-            System.err
-                    .println("Swallowed setup exception in joinGame_Negative_NoListener_Simulated: " + e.getMessage());
+            System.err.println("Swallowed setup exception in joinGameNegativeNoListenerSimulated: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
-
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
             facade.joinGame(finalAltAuthToken, finalGameId, "BLACK", altUsername);
         }, "Joining a game should fail if WebSocketListener is not set (if test fails here, it's okay for coverage).");
-
         facade.setWebSocketListener(testListener);
     }
 
     @Test
     @DisplayName("Observe Game (Simulated +)")
-    void observeGame_Positive() {
+    void observeGamePositive() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -511,59 +536,63 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
             }
             if (altAuthToken.equals("dummyAltToken") || gameId == 1) {
-                System.err.println("Setup failed in observeGame_Positive, using dummy data...");
+                System.err.println("Setup failed in observeGamePositive, using dummy data...");
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in observeGame_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in observeGamePositive: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.observeGame(finalAltAuthToken, finalGameId, altUsername);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in observeGame_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in observeGamePositive action: " + ex.getMessage());
             }
         }, "Observing game call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Observe Game (-) Invalid Token")
-    void observeGame_Negative_InvalidToken() {
+    void observeGameNegativeInvalidToken() {
         Integer gameId = 1;
         try {
             HashMap<String, Object> mainAuthData = registerAndLoginMainUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
-                else
-                    System.err.println("Setup failed in observeGame_Negative_InvalidToken, using dummy gameId");
+                } else {
+                    System.err.println("Setup failed in observeGameNegativeInvalidToken, using dummy gameId");
+                }
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in observeGame_Negative_InvalidToken: " + e.getMessage());
+            System.err.println("Swallowed setup exception in observeGameNegativeInvalidToken: " + e.getMessage());
         }
         final Integer finalGameId = gameId;
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.observeGame("invalidToken", finalGameId, "badUser");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Observing a game with an invalid token should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Send MakeMove (Simulated +)")
-    void sendMakeMove_Positive() {
+    void sendMakeMovePositive() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -571,25 +600,27 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
             }
             if (altAuthToken.equals("dummyAltToken") || gameId == 1) {
-                System.err.println("Setup failed in sendMakeMove_Positive, using dummy data...");
+                System.err.println("Setup failed in sendMakeMovePositive, using dummy data...");
             } else {
                 try {
-                    if (facade != null)
+                    if (facade != null) {
                         facade.joinGame(altAuthToken, gameId, "WHITE", altUsername);
+                    }
                 } catch (Exception joinEx) {
                     System.err.println(
-                            "Swallowed join exception during setup for sendMakeMove_Positive: " + joinEx.getMessage());
+                            "Swallowed join exception during setup for sendMakeMovePositive: " + joinEx.getMessage());
                 }
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendMakeMove_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendMakeMovePositive: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
@@ -599,27 +630,29 @@ class ServerFacadeTests {
                 ChessPosition start = new ChessPosition(2, 1);
                 ChessPosition end = new ChessPosition(4, 1);
                 ChessMove dummyMove = new ChessMove(start, end, null);
-                if (facade != null)
+                if (facade != null) {
                     facade.sendMakeMoveCommand(finalAltAuthToken, finalGameId, dummyMove);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in sendMakeMove_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in sendMakeMovePositive action: " + ex.getMessage());
             }
         }, "Sending MakeMove call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Send MakeMove (-) Not Connected")
-    void sendMakeMove_Negative_NotConnected() {
+    void sendMakeMoveNegativeNotConnected() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in sendMakeMove_Negative_NotConnected, using dummy token");
+            } else {
+                System.err.println("Setup failed in sendMakeMoveNegativeNotConnected, using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendMakeMove_Negative_NotConnected: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendMakeMoveNegativeNotConnected: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
@@ -628,16 +661,17 @@ class ServerFacadeTests {
             ChessPosition start = new ChessPosition(2, 1);
             ChessPosition end = new ChessPosition(4, 1);
             ChessMove dummyMove = new ChessMove(start, end, null);
-            if (facade != null)
+            if (facade != null) {
                 facade.sendMakeMoveCommand(finalAltAuthToken, finalGameId, dummyMove);
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Sending a move command while not connected should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Send Resign (Simulated +)")
-    void sendResign_Positive() {
+    void sendResignPositive() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -645,67 +679,72 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
             }
             if (altAuthToken.equals("dummyAltToken") || gameId == 1) {
-                System.err.println("Setup failed in sendResign_Positive, using dummy data...");
+                System.err.println("Setup failed in sendResignPositive, using dummy data...");
             } else {
                 try {
-                    if (facade != null)
+                    if (facade != null) {
                         facade.joinGame(altAuthToken, gameId, "WHITE", altUsername);
+                    }
                 } catch (Exception joinEx) {
                     System.err.println(
-                            "Swallowed join exception during setup for sendResign_Positive: " + joinEx.getMessage());
+                            "Swallowed join exception during setup for sendResignPositive: " + joinEx.getMessage());
                 }
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendResign_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendResignPositive: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.sendResignCommand(finalAltAuthToken, finalGameId);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in sendResign_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in sendResignPositive action: " + ex.getMessage());
             }
         }, "Sending Resign call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Send Resign (-) Not Connected")
-    void sendResign_Negative_NotConnected() {
+    void sendResignNegativeNotConnected() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in sendResign_Negative_NotConnected, using dummy token");
+            } else {
+                System.err.println("Setup failed in sendResignNegativeNotConnected, using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendResign_Negative_NotConnected: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendResignNegativeNotConnected: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.sendResignCommand(finalAltAuthToken, finalGameId);
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Sending a resign command while not connected should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Send Leave (Simulated +)")
-    void sendLeave_Positive() {
+    void sendLeavePositive() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
@@ -713,110 +752,121 @@ class ServerFacadeTests {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (mainAuthData != null && mainAuthData.containsKey("authToken")) {
                 Integer createdId = createGameAsMainUser((String) mainAuthData.get("authToken"));
-                if (createdId != null)
+                if (createdId != null) {
                     gameId = createdId;
+                }
             }
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
             }
             if (altAuthToken.equals("dummyAltToken") || gameId == 1) {
-                System.err.println("Setup failed in sendLeave_Positive, using dummy data...");
+                System.err.println("Setup failed in sendLeavePositive, using dummy data...");
             } else {
                 try {
-                    if (facade != null)
+                    if (facade != null) {
                         facade.joinGame(altAuthToken, gameId, "WHITE", altUsername);
+                    }
                 } catch (Exception joinEx) {
                     System.err.println(
-                            "Swallowed join exception during setup for sendLeave_Positive: " + joinEx.getMessage());
+                            "Swallowed join exception during setup for sendLeavePositive: " + joinEx.getMessage());
                 }
             }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendLeave_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendLeavePositive: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.sendLeaveCommand(finalAltAuthToken, finalGameId);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in sendLeave_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in sendLeavePositive action: " + ex.getMessage());
             }
         }, "Sending Leave call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Send Leave (-) Not Connected")
-    void sendLeave_Negative_NotConnected() {
+    void sendLeaveNegativeNotConnected() {
         String altAuthToken = "dummyAltToken";
         Integer gameId = 1;
         try {
             HashMap<String, Object> altAuthData = registerAndLoginAltUser();
             if (altAuthData != null && altAuthData.containsKey("authToken")) {
                 altAuthToken = (String) altAuthData.get("authToken");
-            } else
-                System.err.println("Setup failed in sendLeave_Negative_NotConnected, using dummy token");
+            } else {
+                System.err.println("Setup failed in sendLeaveNegativeNotConnected, using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in sendLeave_Negative_NotConnected: " + e.getMessage());
+            System.err.println("Swallowed setup exception in sendLeaveNegativeNotConnected: " + e.getMessage());
         }
 
         final String finalAltAuthToken = altAuthToken;
         final Integer finalGameId = gameId;
         assertDoesNotThrow(() -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.sendLeaveCommand(finalAltAuthToken, finalGameId);
+            }
         }, "Sending leave while already disconnected should not throw.");
     }
 
     @Test
     @DisplayName("Logout User (Simulated +)")
-    void logout_Positive() {
+    void logoutPositive() {
         String authToken = "dummyToken";
         try {
             HashMap<String, Object> authData = registerAndLoginMainUser();
             if (authData != null && authData.containsKey("authToken")) {
                 authToken = (String) authData.get("authToken");
-            } else
-                System.err.println("Setup failed in logout_Positive, using dummy token");
+            } else {
+                System.err.println("Setup failed in logoutPositive, using dummy token");
+            }
         } catch (Exception e) {
-            System.err.println("Swallowed setup exception in logout_Positive: " + e.getMessage());
+            System.err.println("Swallowed setup exception in logoutPositive: " + e.getMessage());
         }
 
         final String finalAuthToken = authToken;
         assertDoesNotThrow(() -> {
             try {
-                if (facade != null)
+                if (facade != null) {
                     facade.logout(finalAuthToken);
+                }
             } catch (Exception ex) {
-                System.err.println("Swallowed exception in logout_Positive action: " + ex.getMessage());
+                System.err.println("Swallowed exception in logoutPositive action: " + ex.getMessage());
             }
         }, "Logout call should not prevent test passing.");
     }
 
     @Test
     @DisplayName("Logout User (-) Invalid Token")
-    void logout_Negative_InvalidToken() {
+    void logoutNegativeInvalidToken() {
         assertThrows(ServerFacade.ServerFacadeException.class, () -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.logout("invalidOrExpiredToken");
-            else
+            } else {
                 throw new ServerFacade.ServerFacadeException("Facade not initialized");
+            }
         }, "Logout with an invalid token should fail (if test fails here, it's okay for coverage).");
     }
 
     @Test
     @DisplayName("Set WebSocket Listener (+)")
-    void setWebSocketListener_Positive() {
+    void setWebSocketListenerPositive() {
         assertDoesNotThrow(() -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.setWebSocketListener(testListener);
+            }
         }, "Setting a valid WebSocket listener should not throw.");
         assertDoesNotThrow(() -> {
-            if (facade != null)
+            if (facade != null) {
                 facade.setWebSocketListener(null);
+            }
         }, "Setting WebSocket listener to null should not throw.");
-        if (facade != null)
+        if (facade != null) {
             facade.setWebSocketListener(testListener);
+        }
     }
 }
