@@ -87,13 +87,13 @@ public class WebSocketHandler {
           ConnectCommand connectCmd = serializer.fromJson(message, ConnectCommand.class);
           handleConnect(session, connectCmd, authData);
           break;
-        case MAKE_MOVE:
-          MakeMoveCommand moveCmd = serializer.fromJson(message, MakeMoveCommand.class);
-          handleMakeMove(session, moveCmd, authData);
-          break;
         case LEAVE:
           LeaveCommand leaveCmd = serializer.fromJson(message, LeaveCommand.class);
           handleLeave(session, leaveCmd, authData);
+          break;
+        case MAKE_MOVE:
+          MakeMoveCommand moveCmd = serializer.fromJson(message, MakeMoveCommand.class);
+          handleMakeMove(session, moveCmd, authData);
           break;
         case RESIGN:
           ResignCommand resignCmd = serializer.fromJson(message, ResignCommand.class);
@@ -159,14 +159,17 @@ public class WebSocketHandler {
     } else if (authData.username().equals(gameData.blackUsername())) {
       playerColor = ChessGame.TeamColor.BLACK;
     }
-    if (playerColor == null) {
-      sendError(session, "Error: Observers cannot make moves.");
-      return;
-    }
     if (game.getTeamTurn() != playerColor) {
       sendError(session, "Error: It's not your turn.");
+
+      if (playerColor == null) {
+        sendError(session, "Error: Observers cannot make moves.");
+        return;
+      }
       return;
     }
+
+    // Ensures move actually happens
     try {
       game.makeMove(command.getMove());
       gameDAO.updateGame(gameData.gameID(), gameData);
@@ -295,9 +298,11 @@ public class WebSocketHandler {
     }
   }
 
+
+  // Updates player slot iff the game data doesn't match the request
   private void updatePlayerSlotIfNeeded(Integer gameID, String username, GameData gameData) throws DataAccessException {
     GameData updatedGameData = null;
-
+    
     if (username.equals(gameData.whiteUsername())) {
       updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(),
           gameData.gameName(), gameData.game());
