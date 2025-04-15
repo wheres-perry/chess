@@ -127,6 +127,7 @@ public class WebSocketHandler {
     clientManager.register(command.getGameID(), authData.username(), session);
     LoadGameMessage loadGameMsg = new LoadGameMessage(gameData);
     sendDirectMessage(session, loadGameMsg);
+    //Default is observer if not specifid
     String role = "observer";
     if (authData.username().equals(gameData.whiteUsername())) {
       role = "WHITE player";
