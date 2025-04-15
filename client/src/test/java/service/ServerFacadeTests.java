@@ -1,7 +1,7 @@
-package client;
+package service;
 
 import org.junit.jupiter.api.*;
-import server.Server;
+import connection.ServerFacade;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ServerFacadeTests {
 
-  private static Server server;
+
   static ServerFacade facade;
   private static int port;
 
@@ -22,22 +22,15 @@ public class ServerFacadeTests {
 
   @BeforeAll
   public static void init() {
-    server = new Server();
-    port = server.run(0);
-    System.out.println("Started test HTTP server on " + port);
+    port = 8080;
     facade = new ServerFacade("http://localhost:" + port);
-  }
-
-  @AfterAll
-  static void stopServer() {
-    server.stop();
   }
 
   @BeforeEach
   public void clearDatabase() {
     try {
       facade.clearDatabase();
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Database clear failed before test: " + e.getMessage());
     }
   }
@@ -54,7 +47,7 @@ public class ServerFacadeTests {
       assertTrue(authData.containsKey("authToken"), "Response should contain authToken.");
       assertNotNull(authData.get("authToken"), "AuthToken should not be null.");
       assertTrue(((String) authData.get("authToken")).length() > 10, "AuthToken seems too short.");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive register test failed with exception: " + e.getMessage());
     }
   }
@@ -65,16 +58,16 @@ public class ServerFacadeTests {
   void registerNegativeExists() {
     try {
       facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
-      assertThrows(ServerFacade.ServerException.class, () -> {
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
         facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
-      }, "Registering an existing user should throw ServerException.");
+      }, "Registering an existing user should throw ServerFacadeException.");
       try {
         facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
-      } catch (ServerFacade.ServerException e) {
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("403") || e.getMessage().toLowerCase().contains("already taken"),
             "Error message should indicate 'already taken' or HTTP 403.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative register test failed: " + e.getMessage());
     }
   }
@@ -83,12 +76,12 @@ public class ServerFacadeTests {
   @Test
   @DisplayName("Register Bad Request (-)")
   void registerNegativeBadRequest() {
-    assertThrows(ServerFacade.ServerException.class, () -> {
+    assertThrows(ServerFacade.ServerFacadeException.class, () -> {
       facade.register(TEST_USER, null, TEST_EMAIL);
-    }, "Registering with null password should throw ServerException.");
+    }, "Registering with null password should throw ServerFacadeException.");
     try {
       facade.register(TEST_USER, null, TEST_EMAIL);
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       assertTrue(e.getMessage().contains("400") || e.getMessage().toLowerCase().contains("bad request"),
           "Error message should indicate 'bad request' or HTTP 400.");
     }
@@ -107,7 +100,7 @@ public class ServerFacadeTests {
       assertTrue(authData.containsKey("authToken"), "Response should contain authToken.");
       assertNotNull(authData.get("authToken"), "AuthToken should not be null.");
       assertTrue(((String) authData.get("authToken")).length() > 10, "AuthToken seems too short.");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive login test failed with exception: " + e.getMessage());
     }
   }
@@ -116,12 +109,12 @@ public class ServerFacadeTests {
   @Test
   @DisplayName("Login Non-Existent User (-)")
   void loginNegativeNoUser() {
-    assertThrows(ServerFacade.ServerException.class, () -> {
+    assertThrows(ServerFacade.ServerFacadeException.class, () -> {
       facade.login("non_existent_user", "any_password");
-    }, "Login with non-existent user should throw ServerException.");
+    }, "Login with non-existent user should throw ServerFacadeException.");
     try {
       facade.login("non_existent_user", "any_password");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
           "Error message should indicate 'unauthorized' or HTTP 401.");
     }
@@ -133,16 +126,16 @@ public class ServerFacadeTests {
   void loginNegativeWrongPassword() {
     try {
       facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
-      assertThrows(ServerFacade.ServerException.class, () -> {
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
         facade.login(TEST_USER, "wrong_password");
-      }, "Login with wrong password should throw ServerException.");
+      }, "Login with wrong password should throw ServerFacadeException.");
       try {
         facade.login(TEST_USER, "wrong_password");
-      } catch (ServerFacade.ServerException e) {
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
             "Error message should indicate 'unauthorized' or HTTP 401.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative login test failed: " + e.getMessage());
     }
   }
@@ -157,10 +150,10 @@ public class ServerFacadeTests {
       assertDoesNotThrow(() -> {
         facade.logout(authToken);
       }, "Valid logout should not throw exception.");
-      assertThrows(ServerFacade.ServerException.class, () -> {
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
         facade.listGames(authToken);
       }, "Using logged-out token should fail.");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive logout test failed with exception: " + e.getMessage());
     }
   }
@@ -169,12 +162,12 @@ public class ServerFacadeTests {
   @Test
   @DisplayName("Logout Invalid Token (-)")
   void logoutNegativeInvalidToken() {
-    assertThrows(ServerFacade.ServerException.class, () -> {
+    assertThrows(ServerFacade.ServerFacadeException.class, () -> {
       facade.logout("invalid_or_non_existent_token");
-    }, "Logout with invalid token should throw ServerException.");
+    }, "Logout with invalid token should throw ServerFacadeException.");
     try {
       facade.logout("invalid_or_non_existent_token");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
           "Error message should indicate 'unauthorized' or HTTP 401.");
     }
@@ -203,7 +196,7 @@ public class ServerFacadeTests {
         }
       }
       assertTrue(gameId > 0, "GameID should be a positive integer.");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive create game test failed with exception: " + e.getMessage());
     }
   }
@@ -212,12 +205,12 @@ public class ServerFacadeTests {
   @Test
   @DisplayName("Create Game Invalid Token (-)")
   void createGameNegativeInvalidToken() {
-    assertThrows(ServerFacade.ServerException.class, () -> {
+    assertThrows(ServerFacade.ServerFacadeException.class, () -> {
       facade.createGame("invalid_token", TEST_GAME);
-    }, "Create game with invalid token should throw ServerException.");
+    }, "Create game with invalid token should throw ServerFacadeException.");
     try {
       facade.createGame("invalid_token", TEST_GAME);
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
           "Error message should indicate 'unauthorized' or HTTP 401.");
     }
@@ -232,16 +225,16 @@ public class ServerFacadeTests {
     try {
       HashMap<String, Object> regData = facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
       String authToken = (String) regData.get("authToken");
-      assertThrows(ServerFacade.ServerException.class, () -> {
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
         facade.createGame(authToken, null);
-      }, "Create game with null name should throw ServerException.");
+      }, "Create game with null name should throw ServerFacadeException.");
       try {
         facade.createGame(authToken, null);
-      } catch (ServerFacade.ServerException e) {
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("400") || e.getMessage().toLowerCase().contains("bad request"),
             "Error message should indicate 'bad request' or HTTP 400.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative create game test failed: " + e.getMessage());
     }
   }
@@ -274,7 +267,7 @@ public class ServerFacadeTests {
       assertNull(listedGame.get("whiteUsername"), "White username should be null initially.");
       assertNull(listedGame.get("blackUsername"), "Black username should be null initially.");
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive list games test failed with exception: " + e.getMessage());
     }
   }
@@ -296,7 +289,7 @@ public class ServerFacadeTests {
       List<Map<String, Object>> gamesList = (List<Map<String, Object>>) gamesObj;
       assertTrue(gamesList.isEmpty(), "Games list should be empty when no games created.");
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive empty list games test failed with exception: " + e.getMessage());
     }
   }
@@ -305,12 +298,12 @@ public class ServerFacadeTests {
   @Test
   @DisplayName("List Games Invalid Token (-)")
   void listGamesNegativeInvalidToken() {
-    assertThrows(ServerFacade.ServerException.class, () -> {
+    assertThrows(ServerFacade.ServerFacadeException.class, () -> {
       facade.listGames("invalid_token");
-    }, "List games with invalid token should throw ServerException.");
+    }, "List games with invalid token should throw ServerFacadeException.");
     try {
       facade.listGames("invalid_token");
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
           "Error message should indicate 'unauthorized' or HTTP 401.");
     }
@@ -331,7 +324,7 @@ public class ServerFacadeTests {
       int gameID = Double.valueOf(createdGame.get("gameID").toString()).intValue();
 
       assertDoesNotThrow(() -> {
-        facade.joinGame(user2Auth, gameID, "BLACK");
+        facade.joinGame(user2Auth, gameID, "BLACK", "user2");
       }, "Valid join should not throw exception.");
 
       HashMap<String, Object> listData = facade.listGames(user1Auth);
@@ -341,7 +334,7 @@ public class ServerFacadeTests {
       assertEquals("user2", listedGame.get("blackUsername"), "Black username should be user2.");
       assertNull(listedGame.get("whiteUsername"), "White username should still be null.");
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive join game test failed with exception: " + e.getMessage());
     }
   }
@@ -359,10 +352,10 @@ public class ServerFacadeTests {
 
       HashMap<String, Object> createdGame = facade.createGame(playerAuth, TEST_GAME);
       int gameID = Double.valueOf(createdGame.get("gameID").toString()).intValue();
-      facade.joinGame(playerAuth, gameID, "WHITE");
+      facade.joinGame(playerAuth, gameID, "WHITE", "playerUser");
 
       assertDoesNotThrow(() -> {
-        facade.observeGame(observerAuth, gameID);
+        facade.observeGame(observerAuth, gameID, "observerUser");
       }, "Valid observe should not throw exception.");
 
       HashMap<String, Object> listData = facade.listGames(playerAuth);
@@ -372,7 +365,7 @@ public class ServerFacadeTests {
       assertEquals("playerUser", listedGame.get("whiteUsername"), "White username should be playerUser.");
       assertNull(listedGame.get("blackUsername"), "Black username should still be null.");
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Positive observe game test failed with exception: " + e.getMessage());
     }
   }
@@ -389,19 +382,19 @@ public class ServerFacadeTests {
 
       HashMap<String, Object> createdGame = facade.createGame(user1Auth, TEST_GAME);
       int gameID = Double.valueOf(createdGame.get("gameID").toString()).intValue();
-      facade.joinGame(user1Auth, gameID, "WHITE");
+      facade.joinGame(user1Auth, gameID, "WHITE", "user1");
 
-      assertThrows(ServerFacade.ServerException.class, () -> {
-        facade.joinGame(user2Auth, gameID, "WHITE");
-      }, "Joining a taken color should throw ServerException.");
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
+        facade.joinGame(user2Auth, gameID, "WHITE", "user2");
+      }, "Joining a taken color should throw ServerFacadeException.");
       try {
-        facade.joinGame(user2Auth, gameID, "WHITE");
-      } catch (ServerFacade.ServerException e) {
+        facade.joinGame(user2Auth, gameID, "WHITE", "user2");
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("403") || e.getMessage().toLowerCase().contains("already taken"),
             "Error message should indicate 'already taken' or HTTP 403.");
       }
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative join game test failed: " + e.getMessage());
     }
   }
@@ -413,16 +406,16 @@ public class ServerFacadeTests {
     try {
       HashMap<String, Object> regData = facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
       String authToken = (String) regData.get("authToken");
-      assertThrows(ServerFacade.ServerException.class, () -> {
-        facade.joinGame(authToken, 99999, "WHITE");
-      }, "Joining non-existent game should throw ServerException.");
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
+        facade.joinGame(authToken, 99999, "WHITE", TEST_USER);
+      }, "Joining non-existent game should throw ServerFacadeException.");
       try {
-        facade.joinGame(authToken, 99999, "WHITE");
-      } catch (ServerFacade.ServerException e) {
+        facade.joinGame(authToken, 99999, "WHITE", TEST_USER);
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("400") || e.getMessage().toLowerCase().contains("bad request"),
             "Error message should indicate 'bad request' or HTTP 400.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative join game (bad ID) test failed: " + e.getMessage());
     }
   }
@@ -434,16 +427,16 @@ public class ServerFacadeTests {
     try {
       HashMap<String, Object> regData = facade.register(TEST_USER, TEST_PASS, TEST_EMAIL);
       String authToken = (String) regData.get("authToken");
-      assertThrows(ServerFacade.ServerException.class, () -> {
-        facade.observeGame(authToken, 99999);
-      }, "Observing non-existent game should throw ServerException.");
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
+        facade.observeGame(authToken, 99999, TEST_USER);
+      }, "Observing non-existent game should throw ServerFacadeException.");
       try {
-        facade.observeGame(authToken, 99999);
-      } catch (ServerFacade.ServerException e) {
+        facade.observeGame(authToken, 99999, TEST_USER);
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("400") || e.getMessage().toLowerCase().contains("bad request"),
             "Error message should indicate 'bad request' or HTTP 400.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative observe game (bad ID) test failed: " + e.getMessage());
     }
   }
@@ -458,16 +451,16 @@ public class ServerFacadeTests {
       HashMap<String, Object> createdGame = facade.createGame(authToken, TEST_GAME);
       int gameID = Double.valueOf(createdGame.get("gameID").toString()).intValue();
 
-      assertThrows(ServerFacade.ServerException.class, () -> {
-        facade.joinGame("invalid-token", gameID, "WHITE");
-      }, "Joining game with invalid token should throw ServerException.");
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
+        facade.joinGame("invalid-token", gameID, "WHITE", "dummy");
+      }, "Joining game with invalid token should throw ServerFacadeException.");
       try {
-        facade.joinGame("invalid-token", gameID, "WHITE");
-      } catch (ServerFacade.ServerException e) {
+        facade.joinGame("invalid-token", gameID, "WHITE", "dummy");
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
             "Error message should indicate 'unauthorized' or HTTP 401.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative join game (invalid auth) test failed: " + e.getMessage());
     }
   }
@@ -482,16 +475,16 @@ public class ServerFacadeTests {
       HashMap<String, Object> createdGame = facade.createGame(authToken, TEST_GAME);
       int gameID = Double.valueOf(createdGame.get("gameID").toString()).intValue();
 
-      assertThrows(ServerFacade.ServerException.class, () -> {
-        facade.observeGame("invalid-token", gameID);
-      }, "Observing game with invalid token should throw ServerException.");
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
+        facade.observeGame("invalid-token", gameID, "dummy");
+      }, "Observing game with invalid token should throw ServerFacadeException.");
       try {
-        facade.observeGame("invalid-token", gameID);
-      } catch (ServerFacade.ServerException e) {
+        facade.observeGame("invalid-token", gameID, "dummy");
+      } catch (ServerFacade.ServerFacadeException e) {
         assertTrue(e.getMessage().contains("401") || e.getMessage().toLowerCase().contains("unauthorized"),
             "Error message should indicate 'unauthorized' or HTTP 401.");
       }
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Setup for negative observe game (invalid auth) test failed: " + e.getMessage());
     }
   }
@@ -510,7 +503,7 @@ public class ServerFacadeTests {
         facade.clearDatabase();
       }, "Clear database should not throw an exception.");
 
-      assertThrows(ServerFacade.ServerException.class, () -> {
+      assertThrows(ServerFacade.ServerFacadeException.class, () -> {
         facade.login(TEST_USER, TEST_PASS);
       }, "Login should fail after clear.");
 
@@ -520,7 +513,7 @@ public class ServerFacadeTests {
       List<Map<String, Object>> gamesList = (List<Map<String, Object>>) listData.get("games");
       assertTrue(gamesList.isEmpty(), "Games list should be empty after clear.");
 
-    } catch (ServerFacade.ServerException e) {
+    } catch (ServerFacade.ServerFacadeException e) {
       fail("Clear database functional test failed with exception: " + e.getMessage());
     }
   }
