@@ -192,7 +192,7 @@ public class WebSocketTests {
 
         //attempt to make a move after other player resigns
         ChessMove move = new ChessMove(new ChessPosition(2, 5), new ChessPosition(4, 5), null);
-        makeMove(white, gameID, move, false, false, Set.of(black, observer), Set.of());
+        makeMove(white, gameID, move, false, false, Set.of(observer), Set.of(black));
     }
 
     @Test

@@ -1,4 +1,4 @@
-package serverconnection;
+package connection;
 
 import chess.ChessMove;
 import com.google.gson.Gson;

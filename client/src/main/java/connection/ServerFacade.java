@@ -1,4 +1,4 @@
-package serverconnection;
+package connection;
 
 import java.util.HashMap;
 

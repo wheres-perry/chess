@@ -1,7 +1,7 @@
 package client;
 
 import chess.ChessGame;
-import serverconnection.ServerFacade;
+import connection.ServerFacade;
 import ui.PreLoginRepl;
 import ui.PostLoginRepl;
 import ui.InGameRepl;
