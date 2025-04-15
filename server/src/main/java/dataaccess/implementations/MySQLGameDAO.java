@@ -2,6 +2,7 @@ package dataaccess.implementations;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dataaccess.DataAccessException;
 import dataaccess.interfaces.GameDAO;
 
@@ -12,10 +13,10 @@ import model.GameData;
 
 public class MySQLGameDAO implements GameDAO, AutoCloseable {
   private final Connection connection;
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder().serializeNulls().create();
 
   public MySQLGameDAO() throws DataAccessException {
-    DatabaseManager.createDatabase(); 
+    DatabaseManager.createDatabase();
     connection = DatabaseManager.getConnection();
     createGameTable();
   }
@@ -81,7 +82,10 @@ public class MySQLGameDAO implements GameDAO, AutoCloseable {
 
         try (ResultSet rs = stmt.executeQuery()) {
           if (rs.next()) {
-            ChessGame game = gson.fromJson(rs.getString("game_state"), ChessGame.class);
+            String gameStateJson = rs.getString("game_state");
+
+            ChessGame game = gson.fromJson(gameStateJson, ChessGame.class);
+
 
             return new GameData(
                 rs.getInt("game_id"),
@@ -95,6 +99,8 @@ public class MySQLGameDAO implements GameDAO, AutoCloseable {
       }
     } catch (SQLException e) {
       throw new DataAccessException("Error retrieving game: " + e.getMessage());
+    } catch (Exception e) {
+      throw new DataAccessException("Unexpected error retrieving game: " + e.getMessage());
     }
   }
 
@@ -126,20 +132,27 @@ public class MySQLGameDAO implements GameDAO, AutoCloseable {
   }
 
   @Override
-  public void updateGame(int gameID, GameData game) throws DataAccessException {
-    if (game == null) {
+  public void updateGame(int gameID, GameData gameDataInput) throws DataAccessException {
+    if (gameDataInput == null) {
       throw new DataAccessException("Game data cannot be null");
     }
+    ChessGame gameToSerialize = gameDataInput.game();
+    if (gameToSerialize == null) {
+      throw new DataAccessException("ChessGame object cannot be null");
+    }
+
 
     try {
       String sql = "UPDATE games SET white_username = ?, black_username = ?, game_name = ?, game_state = ? WHERE game_id = ?";
 
-      String gameState = gson.toJson(game.game());
+
+      String gameState = gson.toJson(gameToSerialize);
+
 
       try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-        stmt.setString(1, game.whiteUsername());
-        stmt.setString(2, game.blackUsername());
-        stmt.setString(3, game.gameName());
+        stmt.setString(1, gameDataInput.whiteUsername());
+        stmt.setString(2, gameDataInput.blackUsername());
+        stmt.setString(3, gameDataInput.gameName());
         stmt.setString(4, gameState);
         stmt.setInt(5, gameID);
 
@@ -147,9 +160,12 @@ public class MySQLGameDAO implements GameDAO, AutoCloseable {
         if (rowsAffected == 0) {
           throw new DataAccessException("Game not found with ID: " + gameID);
         }
+
       }
     } catch (SQLException e) {
       throw new DataAccessException("Error updating game: " + e.getMessage());
+    } catch (Exception e) {
+      throw new DataAccessException("Unexpected error updating game: " + e.getMessage());
     }
   }
 
