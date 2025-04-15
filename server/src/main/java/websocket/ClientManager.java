@@ -80,33 +80,36 @@ public class ClientManager {
    *                     is thrown, requires better handling in prod).
    */
   public void notifyMatch(Integer matchId, String skipParticipant, ServerMessage msg) throws IOException {
-    var toRemove = new ArrayList<ClientLink>();
-    String json = SERAILIZER.toJson(msg);
-
     if (matchId == null) {
       System.err.println("[ClientManager] Broadcast attempted with null matchId.");
       return;
     }
 
-    System.out
-        .println("[ClientManager] Broadcasting to match " + matchId + " (excluding " + skipParticipant + "): " + json);
+    String json = SERAILIZER.toJson(msg);
+    System.out.println("[ClientManager] Broadcasting to match " + matchId +
+        " (excluding " + skipParticipant + "): " + json);
+
+    var toRemove = new ArrayList<ClientLink>();
 
     for (ClientLink link : userLinks.values()) {
-      if (link.matchSession.isOpen()) {
-        if (matchId.equals(link.matchID)) {
-          if (skipParticipant == null || !Objects.equals(link.participantName, skipParticipant)) {
-            try {
-              link.transmit(json);
-            } catch (IOException e) {
-              System.err.println(
-                  "Failed broadcast to " + link.participantName + " in match " + matchId + ": " + e.getMessage());
-              toRemove.add(link);
-            }
-          } else {
-            // We skipped this participant
-          }
-        }
-      } else {
+      if (!link.matchSession.isOpen()) {
+        toRemove.add(link);
+        continue;
+      }
+
+      if (!matchId.equals(link.matchID)) {
+        continue;
+      }
+
+      if (skipParticipant != null && Objects.equals(link.participantName, skipParticipant)) {
+        continue;
+      }
+
+      try {
+        link.transmit(json);
+      } catch (IOException e) {
+        System.err.println("Failed broadcast to " + link.participantName +
+            " in match " + matchId + ": " + e.getMessage());
         toRemove.add(link);
       }
     }
