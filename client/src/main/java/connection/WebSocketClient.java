@@ -3,8 +3,6 @@ package connection;
 import chess.ChessMove;
 import com.google.gson.Gson;
 import websocket.commands.*;
-import websocket.messages.*;
-
 import javax.websocket.*;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;

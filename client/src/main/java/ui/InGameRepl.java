@@ -87,7 +87,6 @@ public class InGameRepl implements WebSocketClient.WebSocketListener {
         return false;
     }
 
-    @Override
     public void onMessageReceived(ServerMessage message) {
         System.out.println();
         switch (message.getServerMessageType()) {
@@ -115,7 +114,6 @@ public class InGameRepl implements WebSocketClient.WebSocketListener {
                 + SET_TEXT_COLOR_DARK_GREY + SET_TEXT_BLINKING + ">>> " + SET_TEXT_COLOR_GREEN);
     }
 
-    @Override
     public void onError(String errorMessage) {
         System.out.println();
         printError("[WebSocket Error] " + errorMessage);
