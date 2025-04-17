@@ -4,7 +4,6 @@ import chess.*;
 import client.ChessClient;
 import connection.ServerFacade;
 import connection.WebSocketClient;
-import websocket.messages.*;
 import java.util.*;
 
 import static ui.EscapeSequences.*;
@@ -85,41 +84,6 @@ public class InGameRepl implements WebSocketClient.WebSocketListener {
             }
         }
         return false;
-    }
-
-    public void onMessageReceived(ServerMessage message) {
-        System.out.println();
-        switch (message.getServerMessageType()) {
-            case LOAD_GAME:
-                LoadGameMessage loadMsg = (LoadGameMessage) message;
-                currentGame = loadMsg.getGame().game();
-                if (currentGameID == null) {
-                    currentGameID = loadMsg.getGame().gameID();
-                }
-                System.out.println(SET_TEXT_COLOR_BLUE + "Game state loaded/updated." + RESET_TEXT_COLOR);
-                drawBoard();
-                break;
-            case NOTIFICATION:
-                NotificationMessage notifyMsg = (NotificationMessage) message;
-                System.out.println(
-                        SET_TEXT_COLOR_MAGENTA + "[SERVER NOTIFICATION] " + notifyMsg.getMessage() + RESET_TEXT_COLOR);
-                break;
-            case ERROR:
-                ErrorMessage errorMsg = (ErrorMessage) message;
-                printError("[SERVER ERROR] " + errorMsg.getErrorMessage());
-                break;
-        }
-        String playerStatus = (playerColor == null) ? "Observing" : "Playing as " + playerColor;
-        System.out.print(RESET + SET_TEXT_COLOR_WHITE + "[" + client.getCurrentUser() + " - " + playerStatus + "] "
-                + SET_TEXT_COLOR_DARK_GREY + SET_TEXT_BLINKING + ">>> " + SET_TEXT_COLOR_GREEN);
-    }
-
-    public void onError(String errorMessage) {
-        System.out.println();
-        printError("[WebSocket Error] " + errorMessage);
-        String playerStatus = (playerColor == null) ? "Observing" : "Playing as " + playerColor;
-        System.out.print(RESET + SET_TEXT_COLOR_WHITE + "[" + client.getCurrentUser() + " - " + playerStatus + "] "
-                + SET_TEXT_COLOR_DARK_GREY + SET_TEXT_BLINKING + ">>> " + SET_TEXT_COLOR_GREEN);
     }
 
     public void setPlayerColor(ChessGame.TeamColor color) {
