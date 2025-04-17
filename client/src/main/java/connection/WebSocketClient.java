@@ -41,9 +41,7 @@ public class WebSocketClient {
    * Interface for components that need to react to WebSocket messages.
    */
   public interface WebSocketListener {
-    void onMessageReceived(ServerMessage message);
 
-    void onError(String errorMessage);
   }
 
   /**
