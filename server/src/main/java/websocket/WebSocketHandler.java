@@ -127,7 +127,7 @@ public class WebSocketHandler {
     clientManager.register(command.getGameID(), authData.username(), session);
     LoadGameMessage loadGameMsg = new LoadGameMessage(gameData);
     sendDirectMessage(session, loadGameMsg);
-    //Default is observer if not specifid
+    // Default is observer if not specifid
     String role = "observer";
     if (authData.username().equals(gameData.whiteUsername())) {
       role = "WHITE player";
@@ -299,11 +299,10 @@ public class WebSocketHandler {
     }
   }
 
-
   // Updates player slot iff the game data doesn't match the request
   private void updatePlayerSlotIfNeeded(Integer gameID, String username, GameData gameData) throws DataAccessException {
     GameData updatedGameData = null;
-    
+
     if (username.equals(gameData.whiteUsername())) {
       updatedGameData = new GameData(gameData.gameID(), null, gameData.blackUsername(),
           gameData.gameName(), gameData.game());

@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 public class WebSocketClient {
 
   private final String serverUri;
-  private WebSocketListener messageListener;
   private final Gson gson = new Gson();
   private Session session;
   private boolean isConnected = false;
@@ -36,7 +35,6 @@ public class WebSocketClient {
       }
     }
     this.serverUri = wsUrl;
-    this.messageListener = listener;
   }
 
   /**
@@ -143,70 +141,4 @@ public class WebSocketClient {
     sendCommand(new ResignCommand(authToken, gameID));
   }
 
-  /**
-   * Called by the WebSocket container when the connection is successfully opened.
-   * 
-   * @param session The WebSocket session that has just been opened.
-   */
-  @OnOpen
-  public void onWebSocketOpen(Session session) {
-    this.session = session;
-    this.isConnected = true;
-    connectionLatch.countDown();
-  }
-
-  /**
-   * Called by the WebSocket container when a text message is received.
-   * 
-   * @param message The message received from the server.
-   * @param session The session through which the message was received.
-   */
-  @OnMessage
-  public void onWebSocketMessage(String message, Session session) {
-    try {
-
-      ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-
-      ServerMessage specificMessage;
-      switch (serverMessage.getServerMessageType()) {
-        case LOAD_GAME:
-          specificMessage = gson.fromJson(message, LoadGameMessage.class);
-          break;
-        case ERROR:
-          specificMessage = gson.fromJson(message, ErrorMessage.class);
-          break;
-        case NOTIFICATION:
-          specificMessage = gson.fromJson(message, NotificationMessage.class);
-          break;
-        default:
-          String errorMsg = "Unknown server message type received: " + serverMessage.getServerMessageType();
-          System.err.println(errorMsg);
-          if (messageListener != null) {
-
-            messageListener.onError(errorMsg + " | Raw: " + message);
-          }
-          return;
-      }
-
-      if (messageListener != null) {
-        messageListener.onMessageReceived(specificMessage);
-      } else {
-        System.err.println("No message listener registered to handle message!");
-      }
-    } catch (com.google.gson.JsonSyntaxException jsonEx) {
-      // Handle cases where the message isn't valid JSON
-      String errorMsg = "Failed to parse server message JSON: " + jsonEx.getMessage() + " | Raw message: " + message;
-      System.err.println(errorMsg);
-      if (messageListener != null) {
-        messageListener.onError(errorMsg);
-      }
-    } catch (Exception e) {
-      String errorMsg = "Failed to process server message: " + e.getMessage() + " | Raw message: " + message;
-      System.err.println(errorMsg);
-      e.printStackTrace();
-      if (messageListener != null) {
-        messageListener.onError(errorMsg);
-      }
-    }
-  }
 }
