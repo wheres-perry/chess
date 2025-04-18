@@ -69,3 +69,80 @@ replay_pid*
 *.vsix
 files.py
 .gitignore
+
+# --- Environment Files ---
+# Ignore virtual environment folders (Python)
+.venv/
+.env/
+
+# Ignore environment variable files (often contain secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- Node.js / Build Files ---
+# Ignore Node.js dependency directory
+node_modules/
+
+# Ignore Next.js build output and cache
+.next/
+.cache/
+
+# Ignore other common build/output directories
+build/
+dist/
+out/
+
+# --- Version Control ---
+# Although Git usually handles this, explicitly ignoring .git/ can prevent accidental commits if nested.
+# However, typically you *don't* need to add .git/ to .gitignore.
+# .git/
+
+# --- macOS Specific Files ---
+# Ignore macOS system files
+.DS_Store
+
+# Ignore macOS archive artifacts
+__MACOSX/
+
+# --- IDE Configuration Folders ---
+# Ignore VS Code configuration
+.vscode/
+
+# Ignore JetBrains IDE configuration
+.idea/
+
+# Ignore Cursor IDE configuration
+.cursor/
+
+# --- Log Files ---
+# Ignore all files ending in .log
+*.log
+
+# Ignore specific Node/Yarn debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore specific example log file
+dummy.log
+
+# --- Temporary Files ---
+# Ignore common temporary file patterns
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+
+# --- Operating System Files ---
+Thumbs.db
+ehthumbs.db
+
+.vscode
+.git
+.github
+.devcontainer
